@@ -8,6 +8,9 @@
 
 #define NO_ERROR 0
 #define GENERIC_ERROR 1
+#define SHOW_WINDOW 0
+#define HIDE_WINDOW 1
+#define UNDEFINED_POSITION -1
 
 /// @brief Window object.
 typedef struct _ID_window *ID_window;
@@ -17,7 +20,11 @@ typedef struct _ID_window *ID_window;
 /// @param WINDOW_WIDTH That will be width size.
 /// @param WINDOW_HEIGHT That will be height size.
 /// @return A created window.
-ID_window ID_createWindow(const char *WINDOW_TITLE, const int WINDOW_WIDTH, const int WINDOW_HEIGHT);
+ID_window ID_createWindow(const char *WINDOW_TITLE, const unsigned int WINDOW_WIDTH, const unsigned int WINDOW_HEIGHT, const int WINDOW_X, int WINDOW_Y);
+
+int ID_shouldClose(ID_window window);
+
+void ID_pollEvents(ID_window);
 
 /// @brief Destroying a window with IDGUI.
 /// @param window Needed window for show or hide it.

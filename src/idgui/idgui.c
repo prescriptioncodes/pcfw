@@ -5,6 +5,7 @@
 
 #include "idgui.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifdef __linux__
 #include <X11/Xlib.h>
@@ -55,42 +56,39 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 #endif // _WIN32
 
-ID_window ID_createWindow(const char *WINDOW_TITLE, const int WINDOW_WIDTH, const int WINDOW_HEIGHT)
+ID_window ID_createWindow(const char *WINDOW_TITLE, const unsigned int WINDOW_WIDTH, const unsigned int WINDOW_HEIGHT, const int WINDOW_X, int WINDOW_Y)
 {
-    static struct _ID_window window;
+    ID_window window = malloc(sizeof(ID_window));
     
     printf("Window name is %s\n", WINDOW_TITLE);
     printf("Window size is %dx%d\n", WINDOW_WIDTH, WINDOW_HEIGHT);
     
     #ifdef __linux__
     
-    window.display = XOpenDisplay(NULL);
+    window->display = XOpenDisplay(NULL);
     
-    if (window.display == NULL)
+    if (window->display == NULL)
     {
         printf("Error: Unable to reach XServer.\n");
         return NULL;
     }
     
-    window.screen = DefaultScreen(window.display);
+    window->display = XOpenDisplay(NULL);
     
-    window.window = XCreateSimpleWindow(window.display, RootWindow(window.display, window.screen), 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 1, BlackPixel(window.display, window.screen), WhitePixel(window.display, window.screen));
     
-    XStoreName(window.display, window.window, WINDOW_TITLE);
+    // Monochrome
+    unsigned long black_pixel = BlackPixel(window->display, window->screen);
+    unsigned long white_pixel = WhitePixel(window->display, window->screen);
+    Window root_window = RootWindow(window->display, window->screen);
     
-    XMapWindow(window.display, window.window);
+    // Creating window
+    window->window = XCreateSimpleWindow(window->display, root_window, WINDOW_X, WINDOW_Y, WINDOW_WIDTH, WINDOW_HEIGHT, 1, black_pixel, white_pixel);
     
-    while (1) {
-        XNextEvent(window.display, &window.event);
-        
-        if (window.event.type == Expose)
-        {
-            break;
-        }
-    }
+    // Putting window name
+    XStoreName(window->display, window->window, WINDOW_TITLE);
     
-    XDestroyWindow(window.display, window.window);
-    XCloseDisplay(window.display);
+    // Show window
+    XMapWindow(window->display, window->window);
     
     #endif // __linux__
     
@@ -132,19 +130,36 @@ ID_window ID_createWindow(const char *WINDOW_TITLE, const int WINDOW_WIDTH, cons
     
     #endif // _WIN32
     
-    return &window;
+    return window;
+}
+
+int ID_shouldClose(ID_window window)
+{
+    if(XPending(window->display) > 0)
+    {
+        XNextEvent(window->display, &window->event);
+    }
+    
+    return NO_ERROR;
 }
 
 int ID_showWindow(ID_window window, int show_window)
 {
     #ifdef __linux__
-    // Your code here
+    if(show_window == SHOW_WINDOW)
+    {
+        XMapWindow(window->display, window->window);
+        XFlush(window->display);
+    }
     #endif // __linux__
 
     #ifdef _WIN32
-    if (show_window) {
+    if(show_window == SHOW_WINDOW)
+    {
         ShowWindow(window->hWnd, SW_SHOW);
-    } else {
+    }
+    else if(show_window == HIDE_WINDOW)
+    {
         ShowWindow(window->hWnd, SW_HIDE);
     }
     #endif // _WIN32
@@ -153,9 +168,10 @@ int ID_showWindow(ID_window window, int show_window)
 }
 
 int ID_destroyWindow(ID_window window)
-{
+{   
     #ifdef __linux__
-    // Your code
+    XDestroyWindow(window->display, window->window);
+    XCloseDisplay(window->display);
     #endif // __linux__
 
     #ifdef _WIN32
@@ -166,4 +182,12 @@ int ID_destroyWindow(ID_window window)
     #endif // _WIN32
 
     return NO_ERROR;
+}
+
+void ID_pollEvents(ID_window window)
+{
+    if(window->event.type == Expose)
+    {
+        
+    }
 }
