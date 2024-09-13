@@ -3,9 +3,73 @@
 //  Author: oknauta
 // License: GNU General Public License v2.0
 
+// #include <GL/gl.h>
 #include "idgui.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef __linux__
+#include <X11/Xlib.h>
+#elif _WIN32
+#include <windows.h>
+#endif // __linux__
+
+#ifdef __linux__
+ 
+struct _window
+{
+    int screen;
+    Display *display;
+    Window window;
+    XEvent event;
+};
+
+#endif
+
+
+#ifdef __linux__
+window *createWindow(char *WINDOW_TITLE, const unsigned int WINDOW_WIDTH, const unsigned int WINDOW_HEIGHT, const int WINDOW_X, int WINDOW_Y)
+{
+    window *window = malloc(sizeof(window));
+    
+    
+    window->display = XOpenDisplay(NULL);
+    
+    if(window->display == NULL)
+    {
+        printf("Error starting display.\n");
+        return NULL;
+    }
+    
+    window->screen = DefaultScreen(window->display);
+    Window root_window = RootWindow(window->display, window->screen);
+    unsigned short border = 1;
+    
+    unsigned long black_pixel = BlackPixel(window->display, window->screen);
+    unsigned long white_pixel = WhitePixel(window->display, window->screen);
+    
+    window->window = XCreateSimpleWindow(window->display, root_window, WINDOW_X, WINDOW_Y, WINDOW_WIDTH, WINDOW_HEIGHT, (int)border, black_pixel, white_pixel);
+    
+    XMapWindow(window->display, window->window);
+    XStoreName(window->display, window->window, WINDOW_TITLE);
+    
+    return window;
+}
+
+int windowShouldClose(window *window)
+{
+    if(XPending(window->display))
+    {
+        XNextEvent(window->display, &window->event);
+    }
+    
+    return NO_ERROR;
+}
+#endif
+
+/* OLD CODE 2024-09-10 
+#include "idgui.h"
 
 #ifdef __linux__
 #include <X11/Xlib.h>
@@ -191,3 +255,4 @@ void ID_pollEvents(ID_window window)
         
     }
 }
+*/
