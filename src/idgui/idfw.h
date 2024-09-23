@@ -1,10 +1,10 @@
-//    File: idgui.h
+//    File: idfw.h
 //    Date: 2024-09-09
 //  Author: oknauta
 // License: GNU General Public License v2.0
 
-#ifndef IDGUI
-#define IDGUI
+#ifndef IDFM_H
+#define IDFM_H
 
 #define NO_ERROR 0
 #define GENERIC_ERROR 1
@@ -42,4 +42,4 @@ int showWindow(window *window, int show_window);
 /// @return A destroyed window.
 int destroyWindow(window *window);
 
-#endif // IDGUI
+#endif // IDFM_H

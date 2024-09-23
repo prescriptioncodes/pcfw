@@ -1,10 +1,10 @@
-//    File: idgui.c
+//    File: idfw.c
 //    Date: 2024-09-09
 //  Author: oknauta
 // License: GNU General Public License v2.0
 
 // #include <GL/gl.h>
-#include "idgui.h"
+#include "idfw.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
