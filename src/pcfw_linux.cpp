@@ -78,25 +78,28 @@ namespace PCFW
 
     void pollEvents(window *window)
     {
-        XNextEvent(window->_display, &window->_event);
-
-        switch (window->_event.type)
+        if (XPending(window->_display) > 0)
         {
-        case ClientMessage:
-            if (window->_event.xclient.data.l[0] == window->_wm_delete_window)
-            {
-                window->_loop = 1;
-            }
-            break;
+            XNextEvent(window->_display, &window->_event);
 
-        case ConfigureNotify:
-            int new_width = window->_event.xconfigure.width;
-            int new_height = window->_event.xconfigure.height;
-            if (window->_framebuffer_size_callback)
+            switch (window->_event.type)
             {
-                window->_framebuffer_size_callback(new_width, new_height);
+            case ClientMessage:
+                if (window->_event.xclient.data.l[0] == window->_wm_delete_window)
+                {
+                    window->_loop = 1;
+                }
+                break;
+
+            case ConfigureNotify:
+                int new_width = window->_event.xconfigure.width;
+                int new_height = window->_event.xconfigure.height;
+                if (window->_framebuffer_size_callback)
+                {
+                    window->_framebuffer_size_callback(new_width, new_height);
+                }
+                break;
             }
-            break;
         }
     }
 
@@ -150,6 +153,9 @@ namespace PCFW
         XSetWMProtocols(_window->_display, _window->_window, &_window->_wm_delete_window, 1);
 
         XSelectInput(_window->_display, _window->_window, StructureNotifyMask | KeyPressMask | ButtonPressMask);
+
+        _window->_width = width;
+        _window->_height = height;
 
         return _window;
     }
