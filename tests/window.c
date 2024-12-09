@@ -10,6 +10,8 @@
 
 void framebufferSizeCallback(int width, int height)
 {
+    printf("%dx%d\n", width, height);
+    
     glViewport(0, 0, width, height);
 }
 

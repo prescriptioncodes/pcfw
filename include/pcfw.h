@@ -13,10 +13,9 @@ extern "C"
 
     typedef void (*framebuffer_size_callback)(int width, int height);
 
-    typedef struct _PC_window PC_window;
+    typedef struct PC_window PC_window;
 
     PC_window *PC_createWindow(int width, int height, const char *title);
-
     void PC_destroyWindow(PC_window *window);
     void PC_swapBuffers(PC_window *window);
     void PC_makeCurrentContext(PC_window *window);

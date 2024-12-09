@@ -1,6 +1,6 @@
 // Author: oknauta
 // License: Unknown
-// File: pcfw.c
+// File: linux.c
 // Date: 2024-11-18
 
 #include "pcfw.h"
@@ -10,30 +10,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct _PC_window
+struct PC_window
 {
-    int _position_x, _position_y; // Position in vec2
-    int _width, _height; // Size
-    const char *_title; // Title
-    int _screen; // Screen
-    int _loop; // If the window is looping
-    Display *_display; // Display
-    Window _window; // Window
-    Colormap _colormap; // Colormap 
-    XEvent _event; // Events
-    Visual *_visual; // Visual
-    XVisualInfo *_visual_info; // Visual info
-    GLXContext _context; // Context
-    XSetWindowAttributes _attributes; // Attributes
-    Atom _wm_delete_window; // Deleting the window when pressing the X button
+    int _position_x, _position_y;                         // Position in vec2
+    int _width, _height;                                  // Size
+    const char *_title;                                   // Title
+    int _screen;                                          // Screen
+    int _loop;                                            // If the window is looping
+    Display *_display;                                    // Display
+    Window _window;                                       // Window
+    Colormap _colormap;                                   // Colormap
+    XEvent _event;                                        // Events
+    Visual *_visual;                                      // Visual
+    XVisualInfo *_visual_info;                            // Visual info
+    GLXContext _context;                                  // Context
+    XSetWindowAttributes _attributes;                     // Attributes
+    Atom _wm_delete_window;                               // Deleting the window when pressing the X button
     framebuffer_size_callback _framebuffer_size_callback; // Callbacks the framebuffer size
 };
 
 void PC_setSwapInterval(PC_window *window, int interval)
 {
-    glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+    static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = NULL;
 
-    PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+    if (!glXSwapIntervalEXT)
+    {
+        glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+    }
 
     if (glXSwapIntervalEXT)
     {
@@ -43,7 +46,10 @@ void PC_setSwapInterval(PC_window *window, int interval)
 
 const char *PC_getWindowTitle(PC_window *window)
 {
-    return window->_title;
+    if (window->_title)
+        return window->_title;
+    else
+        return NULL;
 }
 
 void PC_setFramebufferSizeCallback(PC_window *window, framebuffer_size_callback callback)
@@ -54,7 +60,10 @@ void PC_setFramebufferSizeCallback(PC_window *window, framebuffer_size_callback 
 
 int PC_windowShouldClose(PC_window *window)
 {
-    return window->_loop;
+    if (window->_loop)
+        return window->_loop;
+    else
+        return NULL;
 }
 
 void PC_pollEvents(PC_window *window)
