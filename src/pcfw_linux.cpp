@@ -5,7 +5,7 @@
 
 #ifdef __linux__
 
-#include "pcfw.hpp"
+#include "pcfw/pcfw.hpp"
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <X11/Xlib.h>
