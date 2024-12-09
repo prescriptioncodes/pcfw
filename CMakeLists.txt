@@ -4,7 +4,7 @@ project(idfw VERSION 0.1.0 LANGUAGES C)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 if(LINUX)
-add_library(idfw SHARED src/pcfw_linux.c)
+add_library(pcfw SHARED src/pcfw_linux.c)
 endif(LINUX)
 
-target_link_libraries(idfw PUBLIC X11 GL)
+target_link_libraries(pcfw PUBLIC X11 GL)
