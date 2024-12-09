@@ -63,7 +63,7 @@ int PC_windowShouldClose(PC_window *window)
     if (window->_loop)
         return window->_loop;
     else
-        return NULL;
+        return 0;
 }
 
 void PC_pollEvents(PC_window *window)
