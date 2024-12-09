@@ -1,6 +1,6 @@
 // Author: oknauta
-// License: Unknown
-// File: linux.c
+// License: MIT
+// File: pcfw_linux.cpp
 // Date: 2024-11-18
 
 #include "pcfw.hpp"
@@ -94,6 +94,8 @@ namespace PCFW
             case ConfigureNotify:
                 int new_width = window->_event.xconfigure.width;
                 int new_height = window->_event.xconfigure.height;
+                window->_width = new_width;
+                window->_height = new_height;
                 if (window->_framebuffer_size_callback)
                 {
                     window->_framebuffer_size_callback(new_width, new_height);

@@ -1,6 +1,6 @@
 // Author: oknauta
-// License: Unknown
-// File: pcfw.h
+// License: MIT
+// File: pcfw.hpp
 // Date: 2024-11-18
 
 #ifndef _PCFW_HPP
