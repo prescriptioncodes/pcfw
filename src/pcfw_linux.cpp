@@ -3,12 +3,12 @@
 // File: pcfw_linux.cpp
 // Date: 2024-11-18
 
+#ifdef __linux__
+
 #include "pcfw.hpp"
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <X11/Xlib.h>
-
-#ifdef __linux__
 
 namespace PCFW
 {

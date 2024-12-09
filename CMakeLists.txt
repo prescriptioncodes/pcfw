@@ -1,11 +1,15 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.25.0)
 project(idfw VERSION 0.1.0 LANGUAGES CXX)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_library(pcfw SHARED src/pcfw_linux.cpp)
 
+if(LINUX)
 target_link_libraries(pcfw PUBLIC X11 GL)
+elseif(WIN32)
+target_link_libraries(pcfw PUBLIC opengl32)
+endif()
 
 install(TARGETS pcfw DESTINATION /usr/lib)
 
