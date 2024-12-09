@@ -18,7 +18,7 @@ endif()
 install(TARGETS pcfw DESTINATION /usr/lib)
 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
-    DESTINATION /usr/include/pcfw
+    DESTINATION /usr/include/
     FILES_MATCHING PATTERN "*.hpp"
 )
 
