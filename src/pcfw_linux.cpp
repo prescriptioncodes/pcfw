@@ -8,6 +8,8 @@
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 
+#ifdef __linux__
+
 namespace PCFW
 {
 
@@ -204,3 +206,5 @@ namespace PCFW
             return;
     }
 } // namespace PCFW
+
+#endif

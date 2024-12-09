@@ -3,9 +3,7 @@ project(idfw VERSION 0.1.0 LANGUAGES CXX)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-if(LINUX)
 add_library(pcfw SHARED src/pcfw_linux.cpp)
-endif(LINUX)
 
 target_link_libraries(pcfw PUBLIC X11 GL)
 
@@ -18,7 +16,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME "pcfw")
-set(CPACK_PACKAGE_VERSION "0.1.0")
+set(CPACK_PACKAGE_VERSION "0.1.1")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/prescriptioncodes/idfw")
 set(CPACK_PACKAGE_DESCRIPTION "A library made with XLib/C++ to use with OpenGL.")
 set(CPACK_PACKAGE_CONTACT "oknauta@proton.me")
