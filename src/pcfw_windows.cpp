@@ -6,8 +6,8 @@
 #ifdef _WIN32
 
 #include "pcfw/pcfw.hpp"
-#include <windows.h>
 #include <GL/gl.h>
+#include <windows.h>
 
 namespace PCFW
 {
@@ -25,7 +25,7 @@ namespace PCFW
 
     void setSwapInterval(window *window, int interval)
     {
-        typedef BOOL(WINAPI *PFNWGLSWAPINTERVALEXTPROC)(int);
+        typedef BOOL(WINAPI * PFNWGLSWAPINTERVALEXTPROC)(int);
         static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = nullptr;
 
         if (!wglSwapIntervalEXT)

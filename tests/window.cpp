@@ -16,24 +16,31 @@ int main(void)
 {
     PCFW::window *window = PCFW::createWindow(800, 600, "GL");
 
+    PCFW::makeCurrentContext(window);
+
     PCFW::setFramebufferSizeCallback(window, callback);
-    
+
     PCFW::setSwapInterval(window, 1);
-    
+
     glewInit();
-    
+
     while (!PCFW::windowShouldClose(window))
     {
+        if (PCFW::getKey(window, PCFW::KEY_A, PCFW::KEY_PRESS))
+        {
+            std::cout << "A pressed!\n";
+        }
+
         glClear(GL_COLOR_BUFFER_BIT);
-        
+
         glBegin(GL_TRIANGLES);
-        
+
         glVertex2f(0.0f, 1.0f);
         glVertex2f(-1.0f, -1.0f);
         glVertex2f(1.0f, -1.0f);
-        
+
         glEnd();
-        
+
         PCFW::swapBuffers(window);
         PCFW::pollEvents(window);
     }

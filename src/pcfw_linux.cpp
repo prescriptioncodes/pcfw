@@ -12,10 +12,38 @@
 
 namespace PCFW
 {
+    const int KEY_PRESS = 0;
+    const int KEY_RELEASE = 1;
+
+    const int KEY_A = 38;
+    const int KEY_B = 56;
+    const int KEY_C = 54;
+    const int KEY_D = 40;
+    const int KEY_E = 26;
+    const int KEY_F = 41;
+    const int KEY_G = 42;
+    const int KEY_H = 43;
+    const int KEY_I = 31;
+    const int KEY_J = 44;
+    const int KEY_K = 45;
+    const int KEY_L = 46;
+    const int KEY_M = 58;
+    const int KEY_N = 57;
+    const int KEY_O = 32;
+    const int KEY_P = 33;
+    const int KEY_Q = 24;
+    const int KEY_R = 27;
+    const int KEY_S = 39;
+    const int KEY_T = 28;
+    const int KEY_U = 30;
+    const int KEY_V = 55;
+    const int KEY_W = 25;
+    const int KEY_X = 53;
+    const int KEY_Y = 29;
+    const int KEY_Z = 52;
 
     struct window
     {
-        int _position_x, _position_y;                         // Position in vec2
         int _width, _height;                                  // Size
         const char *_title;                                   // Title
         int _screen;                                          // Screen
@@ -30,7 +58,22 @@ namespace PCFW
         XSetWindowAttributes _attributes;                     // Attributes
         Atom _wm_delete_window;                               // Deleting the window when pressing the X button
         framebuffer_size_callback _framebuffer_size_callback; // Callbacks the framebuffer size
+        char key_state[256];
     };
+
+    int getKey(window *window, int key, int type)
+    {
+        if (type == KEY_PRESS)
+        {
+            return window->key_state[key];
+        }
+        else if (type == KEY_RELEASE)
+        {
+            return !window->key_state[key];
+        }
+
+        return 0;
+    }
 
     void setSwapInterval(window *window, int interval)
     {
@@ -49,10 +92,7 @@ namespace PCFW
 
     const char *getWindowTitle(window *window)
     {
-        if (window->_title)
-            return window->_title;
-        else
-            return NULL;
+        return window ? window->_title : NULL;
     }
 
     void setFramebufferSizeCallback(window *window, framebuffer_size_callback callback)
@@ -63,19 +103,16 @@ namespace PCFW
 
     int windowShouldClose(window *window)
     {
-        if (window->_loop)
-            return window->_loop;
-        else
-            return 0;
+        return window ? window->_loop : 0;
     }
 
     int getWindowWidth(window *window)
     {
-        return window->_width;
+        return window ? window->_width : 0;
     }
     int getWindowHeight(window *window)
     {
-        return window->_height;
+        return window ? window->_height : 0;
     }
 
     void pollEvents(window *window)
@@ -94,6 +131,7 @@ namespace PCFW
                 break;
 
             case ConfigureNotify:
+            {
                 int new_width = window->_event.xconfigure.width;
                 int new_height = window->_event.xconfigure.height;
                 window->_width = new_width;
@@ -102,6 +140,15 @@ namespace PCFW
                 {
                     window->_framebuffer_size_callback(new_width, new_height);
                 }
+                break;
+            }
+            case KeyPress:
+            {
+                window->key_state[window->_event.xkey.keycode] = true;
+                break;
+            }
+            case KeyRelease:
+                window->key_state[window->_event.xkey.keycode] = false;
                 break;
             }
         }
@@ -127,8 +174,7 @@ namespace PCFW
 
         _window->_screen = DefaultScreen(_window->_display);
 
-        int attributes[]{
-            GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
+        int attributes[]{GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
 
         _window->_visual_info = glXChooseVisual(_window->_display, _window->_screen, attributes);
         if (!_window->_visual_info)
@@ -156,7 +202,7 @@ namespace PCFW
         _window->_wm_delete_window = XInternAtom(_window->_display, "WM_DELETE_WINDOW", False);
         XSetWMProtocols(_window->_display, _window->_window, &_window->_wm_delete_window, 1);
 
-        XSelectInput(_window->_display, _window->_window, StructureNotifyMask | KeyPressMask | ButtonPressMask);
+        XSelectInput(_window->_display, _window->_window, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask);
 
         _window->_width = width;
         _window->_height = height;
@@ -166,32 +212,28 @@ namespace PCFW
 
     void destroyWindow(window *window)
     {
-
-        if (window)
+        if (window->_context)
         {
-            if (window->_context)
-            {
-                glXMakeCurrent(window->_display, None, NULL);
-                glXDestroyContext(window->_display, window->_context);
-            }
-
-            if (window->_colormap)
-            {
-                XFreeColormap(window->_display, window->_colormap);
-            }
-
-            if (window->_window)
-            {
-                XDestroyWindow(window->_display, window->_window);
-            }
-
-            if (window->_display)
-            {
-                XCloseDisplay(window->_display);
-            }
-
-            delete window;
+            glXMakeCurrent(window->_display, None, NULL);
+            glXDestroyContext(window->_display, window->_context);
         }
+
+        if (window->_colormap)
+        {
+            XFreeColormap(window->_display, window->_colormap);
+        }
+
+        if (window->_window)
+        {
+            XDestroyWindow(window->_display, window->_window);
+        }
+
+        if (window->_display)
+        {
+            XCloseDisplay(window->_display);
+        }
+
+        delete window;
     }
 
     void swapBuffers(window *window)
