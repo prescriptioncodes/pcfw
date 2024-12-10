@@ -60,7 +60,7 @@ namespace PCFW
     PCFW_API void pollEvents(window *window);
     PCFW_API void setFramebufferSizeCallback(window *window, framebuffer_size_callback callback);
     PCFW_API void setSwapInterval(window *window, int interval);
-    PCFW_API int windowShouldClose(window *window);
+    PCFW_API bool windowShouldClose(window *window);
     PCFW_API const char *getWindowTitle(window *window);
 
 } // namespace PCFW

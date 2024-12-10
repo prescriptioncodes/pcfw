@@ -19,7 +19,7 @@ namespace PCFW
         HWND _hwnd;                                           // Window Handle
         HDC _hdc;                                             // Device Context
         HGLRC _context;                                       // OpenGL Context
-        int _loop;                                            // If the window is looping
+        int _should_close;                                    // If the window is looping
         framebuffer_size_callback _framebuffer_size_callback; // Framebuffer size callback
     };
 
@@ -54,7 +54,7 @@ namespace PCFW
 
     int windowShouldClose(window *window)
     {
-        return window ? window->_loop : 0;
+        return window ? window->_should_close : 0;
     }
 
     int getWindowWidth(window *window)
@@ -85,7 +85,7 @@ namespace PCFW
         {
         case WM_CLOSE:
             if (_window)
-                _window->_loop = 1;
+                _window->_should_close = 1;
             break;
 
         case WM_SIZE:
@@ -114,7 +114,7 @@ namespace PCFW
             return nullptr;
         }
 
-        _window->_loop = 0;
+        _window->_should_close = 0;
         _window->_title = title;
 
         WNDCLASSA wc = {};
