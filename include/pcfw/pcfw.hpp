@@ -7,13 +7,13 @@
 #define _PCFW_HPP
 
 #ifdef _WIN32
-#ifdef PCFW_EXPORTS
-#define PCFW_API
+    #ifdef PCFW_EXPORTS
+        #define PCFW_API __declspec(dllexport)
+    #else
+        #define PCFW_API __declspec(dllimport)
+    #endif
 #else
-#define PCFW_API
-#endif
-#else
-#define PCFW_API
+    #define PCFW_API
 #endif
 
 namespace PCFW

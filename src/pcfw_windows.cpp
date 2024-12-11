@@ -74,7 +74,7 @@ namespace PCFW
         }
     }
 
-    PCFW_API void INTERNAL_createContext(window *window)
+    void INTERNAL_createContext(window *window)
     {
 
         SetWindowLongPtr(window->_handle_window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
@@ -104,11 +104,11 @@ namespace PCFW
         }
     }
 
-    PCFW_API void INTERNAL_setEvents(window *window)
+    void INTERNAL_setEvents(window *window)
     {
     }
 
-    PCFW_API void INTERNAL_setWindowTitle(window *window)
+    void INTERNAL_setWindowTitle(window *window)
     {
         SetWindowTextA(window->_handle_window, window->_title);
     }
