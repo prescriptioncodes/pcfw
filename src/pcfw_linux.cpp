@@ -5,7 +5,7 @@
 
 #ifdef __linux__
 
-#include "pcfw/pcfw.hpp"
+#include "pcfw/pcfw_internal.hpp"
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <X11/Xlib.h>
@@ -43,25 +43,6 @@ namespace PCFW
     const int KEY_X = 53;
     const int KEY_Y = 29;
     const int KEY_Z = 52;
-
-    struct window
-    {
-        int _width, _height;                                  // Size
-        const char *_title;                                   // Title
-        int _screen;                                          // Screen
-        int _should_close;                                    // If the window is looping
-        Display *_display;                                    // Display
-        Window _window;                                       // Window
-        Colormap _colormap;                                   // Colormap
-        XEvent _event;                                        // Events
-        Visual *_visual;                                      // Visual
-        XVisualInfo *_visual_info;                            // Visual info
-        GLXContext _context;                                  // Context
-        XSetWindowAttributes _attributes;                     // Attributes
-        Atom _wm_delete_window;                               // Deleting the window when pressing the X button
-        framebuffer_size_callback _framebuffer_size_callback; // Callbacks the framebuffer size
-        std::bitset<256> key_state;
-    };
 
     int getKey(window *window, int key, int type)
     {
@@ -156,9 +137,30 @@ namespace PCFW
         }
     }
 
-    static void IN_setAttributes(window *window, int visual_info_attributes[])
+    void INTERNAL_showWindow(window *window)
     {
-        window->_visual_info = glXChooseVisual(window->_display, window->_screen, visual_info_attributes);
+        XMapWindow(window->_display, window->_window);
+    }
+
+    void INTERNAL_setWindowTitle(window *window)
+    {
+        XStoreName(window->_display, window->_window, window->_title);
+    }
+
+    void INTERNAL_createWindow(window *window)
+    {
+        window->_display = XOpenDisplay(nullptr);
+        if (!window->_display && window)
+        {
+            delete window;
+            return;
+        }
+        window->_screen = DefaultScreen(window->_display);
+        window->_window = XCreateWindow(window->_display, RootWindow(window->_display, window->_screen), 0, 0, window->_width, window->_height, 0, CopyFromParent, InputOutput, window->_visual, CWColormap | CWEventMask, &window->_attributes);
+
+        static int _attributes[]{GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
+
+        window->_visual_info = glXChooseVisual(window->_display, window->_screen, _attributes);
 
         if (!window->_visual_info && window)
         {
@@ -171,33 +173,7 @@ namespace PCFW
         window->_attributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask;
     }
 
-    static void IN_openDisplay(window *window)
-    {
-        window->_display = XOpenDisplay(nullptr);
-        if (!window->_display && window)
-        {
-            delete window;
-            return;
-        }
-        window->_screen = DefaultScreen(window->_display);
-    }
-
-    static void IN_showWindow(window *window)
-    {
-        XMapWindow(window->_display, window->_window);
-    }
-
-    static void IN_setWindowTitle(window *window)
-    {
-        XStoreName(window->_display, window->_window, window->_title);
-    }
-
-    static void IN_createWindow(window *window)
-    {
-        window->_window = XCreateWindow(window->_display, RootWindow(window->_display, window->_screen), 0, 0, window->_width, window->_height, 0, CopyFromParent, InputOutput, window->_visual, CWColormap | CWEventMask, &window->_attributes);
-    }
-
-    static void IN_createContext(window *window)
+    void INTERNAL_createContext(window *window)
     {
         window->_context = glXCreateContext(window->_display, window->_visual_info, nullptr, GL_TRUE);
         if (!window->_context && window)
@@ -207,43 +183,12 @@ namespace PCFW
         }
     }
 
-    static void IN_setEvents(window *window)
+    void INTERNAL_setEvents(window *window)
     {
         window->_wm_delete_window = XInternAtom(window->_display, "WM_DELETE_WINDOW", False);
         XSetWMProtocols(window->_display, window->_window, &window->_wm_delete_window, 1);
 
         XSelectInput(window->_display, window->_window, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask);
-    }
-
-    window *createWindow(int width, int height, const char *title)
-    {
-        static window *_window = new window;
-        if (!_window)
-        {
-            return nullptr;
-        }
-
-        _window->_should_close = false;
-        _window->_title = title;
-        _window->_width = width;
-        _window->_height = height;
-
-        IN_openDisplay(_window);
-
-        static int _attributes[]{GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
-
-        IN_setAttributes(_window, _attributes);
-
-        IN_createWindow(_window);
-
-        IN_showWindow(_window);
-        IN_setWindowTitle(_window);
-
-        IN_createContext(_window);
-        
-        IN_setEvents(_window);
-
-        return _window;
     }
 
     void destroyWindow(window *window)

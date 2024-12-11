@@ -26,10 +26,10 @@ int main(void)
 
     while (!PCFW::windowShouldClose(window))
     {
-        if (PCFW::getKey(window, PCFW::KEY_A, PCFW::KEY_PRESS))
-        {
+        if (PCFW::getKey(window, PCFW::KEY_B, PCFW::KEY_PRESS))
             std::cout << "A pressed!\n";
-        }
+
+        
 
         glClear(GL_COLOR_BUFFER_BIT);
 

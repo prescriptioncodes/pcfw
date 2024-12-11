@@ -1,28 +1,65 @@
 // Author: oknauta
 // License: MIT
-// File: pcfw_winapi.cpp
+// File: pcfw_windows.cpp
 // Date: 2024-12-09
 
 #ifdef _WIN32
 
-#include "pcfw/pcfw.hpp"
+#include "pcfw/pcfw_internal.hpp"
 #include <GL/gl.h>
 #include <windows.h>
 
 namespace PCFW
 {
-    struct window
-    {
-        int _position_x, _position_y;                         // Position
-        int _width, _height;                                  // Size
-        const char *_title;                                   // Title
-        HWND _hwnd;                                           // Window Handle
-        HDC _hdc;                                             // Device Context
-        HGLRC _context;                                       // OpenGL Context
-        int _should_close;                                    // If the window is looping
-        framebuffer_size_callback _framebuffer_size_callback; // Framebuffer size callback
-    };
+    const int KEY_PRESS = 0;
+    const int KEY_RELEASE = 1;
 
+    const int KEY_A = 0x41;
+    const int KEY_B = 0x42;
+    const int KEY_C = 0x43;
+    const int KEY_D = 0x44;
+    const int KEY_E = 0x45;
+    const int KEY_F = 0x46;
+    const int KEY_G = 0x47;
+    const int KEY_H = 0x48;
+    const int KEY_I = 0x49;
+    const int KEY_J = 0x4A;
+    const int KEY_K = 0x4B;
+    const int KEY_L = 0x4C;
+    const int KEY_M = 0x4D;
+    const int KEY_N = 0x4E;
+    const int KEY_O = 0x4F;
+    const int KEY_P = 0x50;
+    const int KEY_Q = 0x51;
+    const int KEY_R = 0x52;
+    const int KEY_S = 0x53;
+    const int KEY_T = 0x54;
+    const int KEY_U = 0x55;
+    const int KEY_V = 0x56;
+    const int KEY_W = 0x57;
+    const int KEY_X = 0x58;
+    const int KEY_Y = 0x59;
+    const int KEY_Z = 0x5A;
+
+        
+    int getKey(window *window, int key, int type)
+    {
+        if (!window) 
+            return 0;
+
+        if (type == KEY_PRESS)
+        {
+            return window->_key_state.test(key);
+        }
+        else if (type == KEY_RELEASE)
+        {
+            return !window->_key_state.test(key);
+        }
+
+        return 0;
+    }
+
+    
     void setSwapInterval(window *window, int interval)
     {
         typedef BOOL(WINAPI * PFNWGLSWAPINTERVALEXTPROC)(int);
@@ -38,6 +75,51 @@ namespace PCFW
             wglSwapIntervalEXT(interval);
         }
     }
+    
+    PCFW_API void INTERNAL_createContext(window *window)
+    {
+        
+        SetWindowLongPtr(window->_handle_window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
+
+        window->_handle_device_context = GetDC(window->_handle_window);
+
+        PIXELFORMATDESCRIPTOR pfd = {};
+        pfd.nSize = sizeof(pfd);
+        pfd.nVersion = 1;
+        pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER | PFD_DRAW_TO_WINDOW;
+        pfd.iPixelType = PFD_TYPE_RGBA;
+        pfd.cColorBits = 24;
+        pfd.cRedBits = 8;
+        pfd.cGreenBits = 8;
+        pfd.cBlueBits = 8;
+        pfd.cAlphaBits = 8;
+        pfd.cDepthBits = 24;
+
+        int pixelFormat = ChoosePixelFormat(window->_handle_device_context, &pfd);
+        SetPixelFormat(window->_handle_device_context, pixelFormat, &pfd);
+
+        window->_context = wglCreateContext(window->_handle_device_context);
+        if (!window->_context)
+        {
+            destroyWindow(window);
+            return;
+        }
+    }
+    
+    PCFW_API void INTERNAL_setEvents(window *window)
+    {
+        
+    }
+    
+    PCFW_API void INTERNAL_setWindowTitle(window *window)
+    {
+        SetWindowTextA(window->_handle_window, window->_title);
+    }
+    
+    bool windowShouldClose(window *window)
+    {
+        return window->_should_close ? true : false;
+    }
 
     const char *getWindowTitle(window *window)
     {
@@ -52,16 +134,11 @@ namespace PCFW
         }
     }
 
-    int windowShouldClose(window *window)
-    {
-        return window ? window->_should_close : 0;
-    }
-
     int getWindowWidth(window *window)
     {
         return window ? window->_width : 0;
     }
-
+    
     int getWindowHeight(window *window)
     {
         return window ? window->_height : 0;
@@ -77,15 +154,15 @@ namespace PCFW
         }
     }
 
-    LRESULT CALLBACK windowProc(HWND h_window, UINT u_message, WPARAM w_param, LPARAM l_param)
+    LRESULT CALLBACK windowProc(HWND handle_window, UINT u_message, WPARAM w_param, LPARAM l_param)
     {
-        window *_window = reinterpret_cast<window *>(GetWindowLongPtr(h_window, GWLP_USERDATA));
-
+        window *_window = reinterpret_cast<window *>(GetWindowLongPtr(handle_window, GWLP_USERDATA));
+        
         switch (u_message)
         {
         case WM_CLOSE:
             if (_window)
-                _window->_should_close = 1;
+                _window->_should_close = true;
             break;
 
         case WM_SIZE:
@@ -99,112 +176,83 @@ namespace PCFW
                 }
             }
             break;
+        
+        case WM_KEYDOWN:
+            
+                _window->_key_state.set(w_param, true); // Set the key state to "pressed"
+            
+            break;
 
+        case WM_KEYUP:
+            
+                _window->_key_state.set(w_param, false); // Set the key state to "released"
+            
+            break;
+
+        
         default:
-            return DefWindowProc(h_window, u_message, w_param, l_param);
+            return DefWindowProc(handle_window, u_message, w_param, l_param);
         }
         return 0;
     }
 
-    window *createWindow(int width, int height, const char *title)
+    void INTERNAL_createWindow(window *window)
     {
-        window *_window = new window;
-        if (!_window)
-        {
-            return nullptr;
-        }
 
-        _window->_should_close = 0;
-        _window->_title = title;
-
-        WNDCLASSA wc = {};
+        WNDCLASSEXA wc = {};
         wc.lpfnWndProc = windowProc;
+        wc.cbSize = sizeof(WNDCLASSEXA);
         wc.hInstance = GetModuleHandle(nullptr);
         wc.lpszClassName = "PCFW_WindowClass";
         wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-        RegisterClassA(&wc);
+        RegisterClassExA(&wc);
 
-        _window->_hwnd = CreateWindowExA(
-            0, "PCFW_WindowClass", _window->_title, WS_OVERLAPPEDWINDOW,
-            CW_USEDEFAULT, CW_USEDEFAULT, width, height, nullptr, nullptr, wc.hInstance, nullptr);
+        window->_handle_window = CreateWindowExA(
+            0, "PCFW_WindowClass", window->_title, WS_OVERLAPPEDWINDOW,
+            CW_USEDEFAULT, CW_USEDEFAULT, window->_width, window->_height, nullptr, nullptr, wc.hInstance, nullptr);
 
-        if (!_window->_hwnd)
+        if (!window->_handle_window)
         {
-            delete _window;
-            return nullptr;
+            delete window;
+            return;
         }
-
-        SetWindowLongPtr(_window->_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(_window));
-
-        _window->_hdc = GetDC(_window->_hwnd);
-
-        PIXELFORMATDESCRIPTOR pfd = {};
-        pfd.nSize = sizeof(pfd);
-        pfd.nVersion = 1;
-        pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER | PFD_DRAW_TO_WINDOW;
-        pfd.iPixelType = PFD_TYPE_RGBA;
-        pfd.cColorBits = 24;
-        pfd.cRedBits = 8;
-        pfd.cGreenBits = 8;
-        pfd.cBlueBits = 8;
-        pfd.cAlphaBits = 8;
-        pfd.cDepthBits = 24;
-
-        int pixelFormat = ChoosePixelFormat(_window->_hdc, &pfd);
-        SetPixelFormat(_window->_hdc, pixelFormat, &pfd);
-
-        _window->_context = wglCreateContext(_window->_hdc);
-        if (!_window->_context)
-        {
-            destroyWindow(_window);
-            return nullptr;
-        }
-
-        wglMakeCurrent(_window->_hdc, _window->_context);
-
-        ShowWindow(_window->_hwnd, SW_SHOW);
-        UpdateWindow(_window->_hwnd);
-
-        _window->_width = width;
-        _window->_height = height;
-
-        return _window;
+    }
+    void INTERNAL_showWindow(window *window)
+    {    
+        ShowWindow(window->_handle_window, SW_SHOW);
+        UpdateWindow(window->_handle_window);
     }
 
     void destroyWindow(window *window)
     {
-        if (window)
+        if (!window)
+            return;
+        
+        if (window->_context)
         {
-            if (window->_context)
-            {
-                wglMakeCurrent(window->_hdc, nullptr);
-                wglDeleteContext(window->_context);
-            }
-
-            if (window->_hdc)
-            {
-                ReleaseDC(window->_hwnd, window->_hdc);
-            }
-
-            if (window->_hwnd)
-            {
-                DestroyWindow(window->_hwnd);
-            }
-
-            delete window;
+            wglMakeCurrent(window->_handle_device_context, nullptr);
+            wglDeleteContext(window->_context);
         }
+
+        if (window->_handle_device_context)
+            ReleaseDC(window->_handle_window, window->_handle_device_context);
+
+        if (window->_handle_window)
+            DestroyWindow(window->_handle_window);
+
+        delete window;
     }
 
     void swapBuffers(window *window)
     {
-        if (window && window->_hdc)
-            SwapBuffers(window->_hdc);
+        if (window && window->_handle_device_context)
+            SwapBuffers(window->_handle_device_context);
     }
 
     void makeCurrentContext(window *window)
     {
         if (window)
-            wglMakeCurrent(window->_hdc, window->_context);
+            wglMakeCurrent(window->_handle_device_context, window->_context);
     }
 } // namespace PCFW
 
