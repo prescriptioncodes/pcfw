@@ -29,8 +29,6 @@ int main(void)
         if (PCFW::getKey(window, PCFW::KEY_B, PCFW::KEY_PRESS))
             std::cout << "A pressed!\n";
 
-        
-
         glClear(GL_COLOR_BUFFER_BIT);
 
         glBegin(GL_TRIANGLES);

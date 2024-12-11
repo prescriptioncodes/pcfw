@@ -16,10 +16,6 @@
 #define PCFW_API
 #endif
 
-int aaaaaaaaaabbbbbbbbbbbbbb()
-{
-   return 0; 
-};
 namespace PCFW
 {
     extern const int KEY_PRESS;
@@ -62,7 +58,7 @@ namespace PCFW
      * @return A key pressed or released
      */
     PCFW_API int getKey(window *window, int key, int type);
-    
+
     /**
      * @brief Creates a window with predefined size and title
      * @param width The width in `int`

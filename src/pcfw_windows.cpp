@@ -41,10 +41,9 @@ namespace PCFW
     const int KEY_Y = 0x59;
     const int KEY_Z = 0x5A;
 
-        
     int getKey(window *window, int key, int type)
     {
-        if (!window) 
+        if (!window)
             return 0;
 
         if (type == KEY_PRESS)
@@ -59,7 +58,6 @@ namespace PCFW
         return 0;
     }
 
-    
     void setSwapInterval(window *window, int interval)
     {
         typedef BOOL(WINAPI * PFNWGLSWAPINTERVALEXTPROC)(int);
@@ -75,10 +73,10 @@ namespace PCFW
             wglSwapIntervalEXT(interval);
         }
     }
-    
+
     PCFW_API void INTERNAL_createContext(window *window)
     {
-        
+
         SetWindowLongPtr(window->_handle_window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 
         window->_handle_device_context = GetDC(window->_handle_window);
@@ -105,17 +103,16 @@ namespace PCFW
             return;
         }
     }
-    
+
     PCFW_API void INTERNAL_setEvents(window *window)
     {
-        
     }
-    
+
     PCFW_API void INTERNAL_setWindowTitle(window *window)
     {
         SetWindowTextA(window->_handle_window, window->_title);
     }
-    
+
     bool windowShouldClose(window *window)
     {
         return window->_should_close ? true : false;
@@ -138,7 +135,7 @@ namespace PCFW
     {
         return window ? window->_width : 0;
     }
-    
+
     int getWindowHeight(window *window)
     {
         return window ? window->_height : 0;
@@ -157,7 +154,7 @@ namespace PCFW
     LRESULT CALLBACK windowProc(HWND handle_window, UINT u_message, WPARAM w_param, LPARAM l_param)
     {
         window *_window = reinterpret_cast<window *>(GetWindowLongPtr(handle_window, GWLP_USERDATA));
-        
+
         switch (u_message)
         {
         case WM_CLOSE:
@@ -176,20 +173,19 @@ namespace PCFW
                 }
             }
             break;
-        
+
         case WM_KEYDOWN:
-            
-                _window->_key_state.set(w_param, true); // Set the key state to "pressed"
-            
+
+            _window->_key_state.set(w_param, true); // Set the key state to "pressed"
+
             break;
 
         case WM_KEYUP:
-            
-                _window->_key_state.set(w_param, false); // Set the key state to "released"
-            
+
+            _window->_key_state.set(w_param, false); // Set the key state to "released"
+
             break;
 
-        
         default:
             return DefWindowProc(handle_window, u_message, w_param, l_param);
         }
@@ -218,7 +214,7 @@ namespace PCFW
         }
     }
     void INTERNAL_showWindow(window *window)
-    {    
+    {
         ShowWindow(window->_handle_window, SW_SHOW);
         UpdateWindow(window->_handle_window);
     }
@@ -227,7 +223,7 @@ namespace PCFW
     {
         if (!window)
             return;
-        
+
         if (window->_context)
         {
             wglMakeCurrent(window->_handle_device_context, nullptr);

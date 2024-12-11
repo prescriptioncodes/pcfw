@@ -16,8 +16,8 @@
 
 #ifdef _WIN32
 #include <GL/gl.h>
-#include <windows.h>
 #include <bitset>
+#include <windows.h>
 #endif
 
 namespace PCFW
