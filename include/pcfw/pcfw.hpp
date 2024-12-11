@@ -16,6 +16,10 @@
 #define PCFW_API
 #endif
 
+int aaaaaaaaaabbbbbbbbbbbbbb()
+{
+   return 0; 
+};
 namespace PCFW
 {
     extern const int KEY_PRESS;
