@@ -9,7 +9,7 @@
 
 namespace PCFW
 {
-
+    
     window *createWindow(int width, int height, const char *title)
     {
         window *_window = new window;

@@ -7,46 +7,17 @@
 #define _PCFW_HPP
 
 #ifdef _WIN32
-    #ifdef PCFW_EXPORTS
-        #define PCFW_API __declspec(dllexport)
-    #else
-        #define PCFW_API __declspec(dllimport)
-    #endif
+#ifdef PCFW_EXPORTS
+#define PCFW_API __declspec(dllexport)
 #else
-    #define PCFW_API
+#define PCFW_API __declspec(dllimport)
+#endif
+#else
+#define PCFW_API
 #endif
 
 namespace PCFW
 {
-    extern const int KEY_PRESS;
-    extern const int KEY_RELEASE;
-
-    extern const int KEY_A;
-    extern const int KEY_B;
-    extern const int KEY_C;
-    extern const int KEY_D;
-    extern const int KEY_E;
-    extern const int KEY_F;
-    extern const int KEY_G;
-    extern const int KEY_H;
-    extern const int KEY_I;
-    extern const int KEY_J;
-    extern const int KEY_K;
-    extern const int KEY_M;
-    extern const int KEY_N;
-    extern const int KEY_O;
-    extern const int KEY_P;
-    extern const int KEY_Q;
-    extern const int KEY_R;
-    extern const int KEY_S;
-    extern const int KEY_T;
-    extern const int KEY_U;
-    extern const int KEY_V;
-    extern const int KEY_W;
-    extern const int KEY_X;
-    extern const int KEY_Y;
-    extern const int KEY_Z;
-
     typedef void (*framebuffer_size_callback)(int width, int height);
     typedef struct window window;
 
@@ -138,6 +109,72 @@ namespace PCFW
      * @param window What will be got the title
      */
     PCFW_API const char *getWindowTitle(window *window);
+
+#ifdef _WIN32
+
+    const int KEY_PRESS = 0;
+    const int KEY_RELEASE = 1;
+
+    const int KEY_A = 0x41;
+    const int KEY_B = 0x42;
+    const int KEY_C = 0x43;
+    const int KEY_D = 0x44;
+    const int KEY_E = 0x45;
+    const int KEY_F = 0x46;
+    const int KEY_G = 0x47;
+    const int KEY_H = 0x48;
+    const int KEY_I = 0x49;
+    const int KEY_J = 0x4A;
+    const int KEY_K = 0x4B;
+    const int KEY_L = 0x4C;
+    const int KEY_M = 0x4D;
+    const int KEY_N = 0x4E;
+    const int KEY_O = 0x4F;
+    const int KEY_P = 0x50;
+    const int KEY_Q = 0x51;
+    const int KEY_R = 0x52;
+    const int KEY_S = 0x53;
+    const int KEY_T = 0x54;
+    const int KEY_U = 0x55;
+    const int KEY_V = 0x56;
+    const int KEY_W = 0x57;
+    const int KEY_X = 0x58;
+    const int KEY_Y = 0x59;
+    const int KEY_Z = 0x5A;
+
+#elif __linux__
+
+    const int KEY_PRESS = 0;
+    const int KEY_RELEASE = 1;
+
+    const int KEY_A = 38;
+    const int KEY_B = 56;
+    const int KEY_C = 54;
+    const int KEY_D = 40;
+    const int KEY_E = 26;
+    const int KEY_F = 41;
+    const int KEY_G = 42;
+    const int KEY_H = 43;
+    const int KEY_I = 31;
+    const int KEY_J = 44;
+    const int KEY_K = 45;
+    const int KEY_L = 46;
+    const int KEY_M = 58;
+    const int KEY_N = 57;
+    const int KEY_O = 32;
+    const int KEY_P = 33;
+    const int KEY_Q = 24;
+    const int KEY_R = 27;
+    const int KEY_S = 39;
+    const int KEY_T = 28;
+    const int KEY_U = 30;
+    const int KEY_V = 55;
+    const int KEY_W = 25;
+    const int KEY_X = 53;
+    const int KEY_Y = 29;
+    const int KEY_Z = 52;
+
+#endif
 
 } // namespace PCFW
 

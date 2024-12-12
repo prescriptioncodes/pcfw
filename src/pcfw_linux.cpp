@@ -14,36 +14,6 @@
 
 namespace PCFW
 {
-    const int KEY_PRESS = 0;
-    const int KEY_RELEASE = 1;
-
-    const int KEY_A = 38;
-    const int KEY_B = 56;
-    const int KEY_C = 54;
-    const int KEY_D = 40;
-    const int KEY_E = 26;
-    const int KEY_F = 41;
-    const int KEY_G = 42;
-    const int KEY_H = 43;
-    const int KEY_I = 31;
-    const int KEY_J = 44;
-    const int KEY_K = 45;
-    const int KEY_L = 46;
-    const int KEY_M = 58;
-    const int KEY_N = 57;
-    const int KEY_O = 32;
-    const int KEY_P = 33;
-    const int KEY_Q = 24;
-    const int KEY_R = 27;
-    const int KEY_S = 39;
-    const int KEY_T = 28;
-    const int KEY_U = 30;
-    const int KEY_V = 55;
-    const int KEY_W = 25;
-    const int KEY_X = 53;
-    const int KEY_Y = 29;
-    const int KEY_Z = 52;
-
     int getKey(window *window, int key, int type)
     {
         if (type == KEY_PRESS)
