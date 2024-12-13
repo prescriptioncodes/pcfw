@@ -27,7 +27,6 @@ namespace PCFW
         INTERNAL_showWindow(_window);
         INTERNAL_setWindowTitle(_window);
         INTERNAL_createContext(_window);
-        INTERNAL_setEvents(_window);
 
         return _window;
     }

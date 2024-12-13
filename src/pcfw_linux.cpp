@@ -12,8 +12,70 @@
 
 #include <bitset>
 
+#include <pclog/pclog.hpp>
+
 namespace PCFW
 {
+    constexpr int KEY_LEFT_SHIFT = 160;
+    constexpr int KEY_RIGHT_SHIFT = 161;
+
+    constexpr int KEY_LEFT_CONTROL = 162;
+    constexpr int KEY_RIGHT_CONTROL = 163;
+
+    constexpr int KEY_LEFT_ALT = 164;
+    constexpr int KEY_RIGHT_ALT = 165;
+
+    constexpr int KEY_F1 = 67;
+    constexpr int KEY_F2 = 68;
+    constexpr int KEY_F3 = 69;
+    constexpr int KEY_F4 = 70;
+    constexpr int KEY_F5 = 71;
+    constexpr int KEY_F6 = 72;
+    constexpr int KEY_F7 = 73;
+    constexpr int KEY_F8 = 74;
+    constexpr int KEY_F9 = 75;
+    constexpr int KEY_F10 = 76;
+    constexpr int KEY_F11 = 95;
+    constexpr int KEY_F12 = 96;
+
+    constexpr int KEY_1 = 10;
+    constexpr int KEY_2 = 11;
+    constexpr int KEY_3 = 12;
+    constexpr int KEY_4 = 13;
+    constexpr int KEY_5 = 14;
+    constexpr int KEY_6 = 15;
+    constexpr int KEY_7 = 16;
+    constexpr int KEY_8 = 17;
+    constexpr int KEY_9 = 18;
+    constexpr int KEY_0 = 19;
+
+    constexpr int KEY_A = 38;
+    constexpr int KEY_B = 56;
+    constexpr int KEY_C = 54;
+    constexpr int KEY_D = 40;
+    constexpr int KEY_E = 26;
+    constexpr int KEY_F = 41;
+    constexpr int KEY_G = 42;
+    constexpr int KEY_H = 43;
+    constexpr int KEY_I = 31;
+    constexpr int KEY_J = 44;
+    constexpr int KEY_K = 45;
+    constexpr int KEY_L = 46;
+    constexpr int KEY_M = 58;
+    constexpr int KEY_N = 57;
+    constexpr int KEY_O = 32;
+    constexpr int KEY_P = 33;
+    constexpr int KEY_Q = 24;
+    constexpr int KEY_R = 27;
+    constexpr int KEY_S = 39;
+    constexpr int KEY_T = 28;
+    constexpr int KEY_U = 30;
+    constexpr int KEY_V = 55;
+    constexpr int KEY_W = 25;
+    constexpr int KEY_X = 53;
+    constexpr int KEY_Y = 29;
+    constexpr int KEY_Z = 52;
+
     int getKey(window *window, int key, int type)
     {
         if (type == KEY_PRESS)
@@ -50,8 +112,12 @@ namespace PCFW
 
     void setFramebufferSizeCallback(window *window, framebuffer_size_callback callback)
     {
-        if (window)
-            window->_framebuffer_size_callback = callback;
+        if (!window)
+        {
+            PCLOG::error("Failed to set framebuffer size callback");
+            return;
+        }
+        window->_framebuffer_size_callback = callback;
     }
 
     bool windowShouldClose(window *window)
@@ -109,11 +175,21 @@ namespace PCFW
 
     void INTERNAL_showWindow(window *window)
     {
+        if (!window->_display && !window->_window)
+        {
+            PCLOG::error("Failed to show window");
+            return;
+        }
         XMapWindow(window->_display, window->_window);
     }
 
     void INTERNAL_setWindowTitle(window *window)
     {
+        if (!window->_display && !window->_window)
+        {
+            PCLOG::error("Failed to set internal window title");
+            return;
+        }
         XStoreName(window->_display, window->_window, window->_title);
     }
 
@@ -122,6 +198,7 @@ namespace PCFW
         window->_display = XOpenDisplay(nullptr);
         if (!window->_display && window)
         {
+            PCLOG::error("Failed to open X display");
             delete window;
             return;
         }
@@ -132,39 +209,35 @@ namespace PCFW
 
         window->_visual_info = glXChooseVisual(window->_display, window->_screen, _attributes);
 
-        if (!window->_visual_info && window)
-        {
-            delete window;
-            return;
-        }
-
         window->_visual = window->_visual_info->visual;
         window->_attributes.colormap = XCreateColormap(window->_display, RootWindow(window->_display, window->_screen), window->_visual, AllocNone);
         window->_attributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask;
+
+        window->_wm_delete_window = XInternAtom(window->_display, "WM_DELETE_WINDOW", False);
+        XSetWMProtocols(window->_display, window->_window, &window->_wm_delete_window, 1);
+        XSelectInput(window->_display, window->_window, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask);
+
+        if (!window)
+        {
+            PCLOG::error("Failed to create window");
+            delete window;
+        }
     }
 
     void INTERNAL_createContext(window *window)
     {
-        window->_context = glXCreateContext(window->_display, window->_visual_info, nullptr, GL_TRUE);
-        if (!window->_context && window)
+        if (!window)
         {
-            delete window;
-            return;
+            PCLOG::warning("No window to create context");
         }
-    }
-
-    void INTERNAL_setEvents(window *window)
-    {
-        window->_wm_delete_window = XInternAtom(window->_display, "WM_DELETE_WINDOW", False);
-        XSetWMProtocols(window->_display, window->_window, &window->_wm_delete_window, 1);
-
-        XSelectInput(window->_display, window->_window, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask);
+        window->_context = glXCreateContext(window->_display, window->_visual_info, nullptr, GL_TRUE);
     }
 
     void destroyWindow(window *window)
     {
         if (!window)
-            return;
+            PCLOG::warning("No window to destroy");
+        return;
 
         if (window->_context)
         {
@@ -192,14 +265,18 @@ namespace PCFW
 
     void swapBuffers(window *window)
     {
-        if (window->_display && window->_window)
-            glXSwapBuffers(window->_display, window->_window);
+        if (!window->_display && !window->_window)
+        {
+            PCLOG::warning("No window to swap buffers");
+            return;
+        }
+        glXSwapBuffers(window->_display, window->_window);
     }
 
-    void makeCurrentContext(window *window)
+    void makeContextCurrent(window *window)
     {
         if (!glXMakeCurrent(window->_display, window->_window, window->_context))
-            return;
+            PCLOG::warning("No window to make context");
     }
 } // namespace PCFW
 

@@ -16,7 +16,7 @@ int main(void)
 {
     PCFW::window *window = PCFW::createWindow(800, 600, "GL");
 
-    PCFW::makeCurrentContext(window);
+    PCFW::makeContextCurrent(window);
 
     PCFW::setFramebufferSizeCallback(window, callback);
 
@@ -26,8 +26,12 @@ int main(void)
 
     while (!PCFW::windowShouldClose(window))
     {
-        if (PCFW::getKey(window, PCFW::KEY_B, PCFW::KEY_PRESS))
+        if (PCFW::getKey(window, PCFW::KEY_A, PCFW::KEY_PRESS))
             std::cout << "A pressed!\n";
+        if (PCFW::getKey(window, PCFW::KEY_0, PCFW::KEY_PRESS))
+            std::cout << "0 pressed!\n";
+        if (PCFW::getKey(window, PCFW::KEY_F1, PCFW::KEY_PRESS))
+            std::cout << "F1 pressed!\n";
 
         glClear(GL_COLOR_BUFFER_BIT);
 

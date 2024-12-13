@@ -72,7 +72,7 @@ namespace PCFW
      * @param window What that will make the context
      * @return A made context
      */
-    PCFW_API void makeCurrentContext(window *window);
+    PCFW_API void makeContextCurrent(window *window);
 
     /**
      * @brief Poll the events
@@ -110,71 +110,68 @@ namespace PCFW
      */
     PCFW_API const char *getWindowTitle(window *window);
 
-#ifdef _WIN32
+    constexpr int KEY_PRESS = 0;
+    constexpr int KEY_RELEASE = 1;
 
-    const int KEY_PRESS = 0;
-    const int KEY_RELEASE = 1;
+    extern PCFW_API const int KEY_LEFT_SHIFT;
+    extern PCFW_API const int KEY_RIGHT_SHIFT;
 
-    const int KEY_A = 0x41;
-    const int KEY_B = 0x42;
-    const int KEY_C = 0x43;
-    const int KEY_D = 0x44;
-    const int KEY_E = 0x45;
-    const int KEY_F = 0x46;
-    const int KEY_G = 0x47;
-    const int KEY_H = 0x48;
-    const int KEY_I = 0x49;
-    const int KEY_J = 0x4A;
-    const int KEY_K = 0x4B;
-    const int KEY_L = 0x4C;
-    const int KEY_M = 0x4D;
-    const int KEY_N = 0x4E;
-    const int KEY_O = 0x4F;
-    const int KEY_P = 0x50;
-    const int KEY_Q = 0x51;
-    const int KEY_R = 0x52;
-    const int KEY_S = 0x53;
-    const int KEY_T = 0x54;
-    const int KEY_U = 0x55;
-    const int KEY_V = 0x56;
-    const int KEY_W = 0x57;
-    const int KEY_X = 0x58;
-    const int KEY_Y = 0x59;
-    const int KEY_Z = 0x5A;
+    extern PCFW_API const int KEY_LEFT_CONTROL;
+    extern PCFW_API const int KEY_RIGHT_CONTROL;
 
-#elif __linux__
+    extern PCFW_API const int KEY_LEFT_ALT;
+    extern PCFW_API const int KEY_RIGHT_ALT;
 
-    const int KEY_PRESS = 0;
-    const int KEY_RELEASE = 1;
+    extern PCFW_API const int KEY_F1;
+    extern PCFW_API const int KEY_F2;
+    extern PCFW_API const int KEY_F3;
+    extern PCFW_API const int KEY_F4;
+    extern PCFW_API const int KEY_F5;
+    extern PCFW_API const int KEY_F6;
+    extern PCFW_API const int KEY_F7;
+    extern PCFW_API const int KEY_F8;
+    extern PCFW_API const int KEY_F9;
+    extern PCFW_API const int KEY_F10;
+    extern PCFW_API const int KEY_F11;
+    extern PCFW_API const int KEY_F12;
 
-    const int KEY_A = 38;
-    const int KEY_B = 56;
-    const int KEY_C = 54;
-    const int KEY_D = 40;
-    const int KEY_E = 26;
-    const int KEY_F = 41;
-    const int KEY_G = 42;
-    const int KEY_H = 43;
-    const int KEY_I = 31;
-    const int KEY_J = 44;
-    const int KEY_K = 45;
-    const int KEY_L = 46;
-    const int KEY_M = 58;
-    const int KEY_N = 57;
-    const int KEY_O = 32;
-    const int KEY_P = 33;
-    const int KEY_Q = 24;
-    const int KEY_R = 27;
-    const int KEY_S = 39;
-    const int KEY_T = 28;
-    const int KEY_U = 30;
-    const int KEY_V = 55;
-    const int KEY_W = 25;
-    const int KEY_X = 53;
-    const int KEY_Y = 29;
-    const int KEY_Z = 52;
+    extern PCFW_API const int KEY_0;
+    extern PCFW_API const int KEY_1;
+    extern PCFW_API const int KEY_2;
+    extern PCFW_API const int KEY_3;
+    extern PCFW_API const int KEY_4;
+    extern PCFW_API const int KEY_5;
+    extern PCFW_API const int KEY_6;
+    extern PCFW_API const int KEY_7;
+    extern PCFW_API const int KEY_8;
+    extern PCFW_API const int KEY_9;
 
-#endif
+    extern PCFW_API const int KEY_A;
+    extern PCFW_API const int KEY_B;
+    extern PCFW_API const int KEY_C;
+    extern PCFW_API const int KEY_D;
+    extern PCFW_API const int KEY_E;
+    extern PCFW_API const int KEY_F;
+    extern PCFW_API const int KEY_G;
+    extern PCFW_API const int KEY_H;
+    extern PCFW_API const int KEY_I;
+    extern PCFW_API const int KEY_J;
+    extern PCFW_API const int KEY_K;
+    extern PCFW_API const int KEY_L;
+    extern PCFW_API const int KEY_M;
+    extern PCFW_API const int KEY_N;
+    extern PCFW_API const int KEY_O;
+    extern PCFW_API const int KEY_P;
+    extern PCFW_API const int KEY_Q;
+    extern PCFW_API const int KEY_R;
+    extern PCFW_API const int KEY_S;
+    extern PCFW_API const int KEY_T;
+    extern PCFW_API const int KEY_U;
+    extern PCFW_API const int KEY_V;
+    extern PCFW_API const int KEY_W;
+    extern PCFW_API const int KEY_X;
+    extern PCFW_API const int KEY_Y;
+    extern PCFW_API const int KEY_Z;
 
 } // namespace PCFW
 
