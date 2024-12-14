@@ -24,8 +24,13 @@ int main(void)
 
     glewInit();
 
+    int cursor_x, cursor_y;
+
     while (!PCFW::windowShouldClose(window))
     {
+        PCFW::getCursorPosition(window, &cursor_x, &cursor_y);
+        std::cout << cursor_x << "x" << cursor_y << "\n";
+        
         if (PCFW::getKey(window, PCFW::KEY_A, PCFW::KEY_PRESS))
             std::cout << "A pressed!\n";
         if (PCFW::getKey(window, PCFW::KEY_0, PCFW::KEY_PRESS))

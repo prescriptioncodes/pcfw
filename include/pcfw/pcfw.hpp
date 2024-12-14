@@ -110,6 +110,8 @@ namespace PCFW
      */
     PCFW_API const char *getWindowTitle(window *window);
 
+    PCFW_API void getCursorPosition(window *window, int *x, int *y);
+
     constexpr int KEY_PRESS = 0;
     constexpr int KEY_RELEASE = 1;
 

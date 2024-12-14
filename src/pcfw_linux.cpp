@@ -75,7 +75,19 @@ namespace PCFW
     constexpr int KEY_X = 53;
     constexpr int KEY_Y = 29;
     constexpr int KEY_Z = 52;
-
+    
+    void getCursorPosition(window *window, int *x, int *y)
+    {
+        Window _root;
+        Window _child;
+        
+        int _root_x, _root_y;
+        
+        unsigned int _mask;
+        
+        XQueryPointer(window->_display, window->_window, &_root, &_child, &_root_x, &_root_y, x, y, &_mask);
+    }
+    
     int getKey(window *window, int key, int type)
     {
         if (type == KEY_PRESS)
