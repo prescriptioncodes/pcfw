@@ -41,6 +41,7 @@ namespace PCFW
         framebuffer_size_callback _framebuffer_size_callback; // Framebuffer size callback
         std::bitset<256> _key_state;
         MSG _message;
+        mouse_callback _mouse_callback;
     };
 #endif
 
@@ -61,6 +62,7 @@ namespace PCFW
         XSetWindowAttributes _attributes;
         Atom _wm_delete_window;
         framebuffer_size_callback _framebuffer_size_callback;
+        mouse_callback _mouse_callback;
         std::bitset<256> key_state;
     };
 #endif

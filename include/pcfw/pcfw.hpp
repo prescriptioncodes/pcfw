@@ -19,6 +19,7 @@
 namespace PCFW
 {
     typedef void (*framebuffer_size_callback)(int width, int height);
+    typedef void (*mouse_callback)(int mouse_button, int status, int mods);
     typedef struct window window;
 
     /**
@@ -90,6 +91,13 @@ namespace PCFW
     PCFW_API void setFramebufferSizeCallback(window *window, framebuffer_size_callback callback);
 
     /**
+     * @brief Sets the mouse callback
+     * @param window What will receive the callback
+     * @param callback The callback
+     */
+    PCFW_API void setMouseCallback(window *window, mouse_callback callback);
+
+    /**
      * @brief Sets the swap interval of a window
      * @param window What that will be intervaled
      * @param interval The interval. It can be `1` for V-Sync or `0` for unlimited FPS
@@ -110,11 +118,24 @@ namespace PCFW
      */
     PCFW_API const char *getWindowTitle(window *window);
 
+    /**
+     * @brief Gets the cursor position
+     * @param window What will be get from
+     * @param x The variable that the value will be storaged the horizontal position
+     * @param y The variable that the value will be storaged the vertical position
+     */
     PCFW_API void getCursorPosition(window *window, int *x, int *y);
 
     constexpr int KEY_PRESS = 0;
     constexpr int KEY_RELEASE = 1;
-
+    
+    extern PCFW_API const int MOUSE_LEFT_BUTTON;
+    extern PCFW_API const int MOUSE_RIGHT_BUTTON;
+    extern PCFW_API const int MOUSE_MIDDLE_BUTTON;
+    
+    extern PCFW_API const int MOUSE_PRESS_BUTTON;
+    extern PCFW_API const int MOUSE_RELEASE_BUTTON;
+    
     extern PCFW_API const int KEY_LEFT_SHIFT;
     extern PCFW_API const int KEY_RIGHT_SHIFT;
 

@@ -6,11 +6,20 @@
 #ifdef _WIN32
 
 #include "pcfw/pcfw_internal.hpp"
-#include <GL/gl.h>
-#include <windows.h>
+
+#include <pclog/pclog.hpp>
 
 namespace PCFW
 {
+    // Keys
+    
+    const int MOUSE_LEFT_BUTTON = 0;
+    const int MOUSE_RIGHT_BUTTON = 2;
+    const int MOUSE_MIDDLE_BUTTON = 1;
+    
+    const int MOUSE_PRESS_BUTTON = 0;
+    const int MOUSE_RELEASE_BUTTON = 1;
+    
     constexpr int KEY_LEFT_SHIFT = 0xA0;
     constexpr int KEY_RIGHT_SHIFT = 0xA1;
 
@@ -71,10 +80,47 @@ namespace PCFW
     constexpr int KEY_Y = 0x59;
     constexpr int KEY_Z = 0x5A;
 
+    static void handleMouse(window *window, const int &BUTTON, const int &ACTION)
+    {
+        if (!window)
+        {
+            return;
+        }
+        
+        window->_mouse_callback(BUTTON, ACTION, 0);
+    }
+    
+    void getCursorPosition(window *window, int *x, int *y)
+    {
+        POINT _point; // Point that will storage the x and y
+        
+        
+        // Getting the cursor position
+        if (!GetCursorPos(&_point))
+        {
+            PCLOG::error("Failed to get cursor position");
+            return;
+        }
+        
+        // Converting the screen coordinates from the point on the screen to client-area coordinates
+        if (!ScreenToClient(window->_handle_window, &_point))
+        {
+            PCLOG::error("Failed to pass screen to client");
+            return;
+        }
+        
+        // Giving the _point.x/.y for x/y
+        *x = _point.x;
+        *y = _point.y;
+    }
+    
     int getKey(window *window, int key, int type)
     {
         if (!window)
+        {
+            PCLOG::warning("function `getKey` doesn't know what window should get the keys");
             return 0;
+        }
 
         if (type == KEY_PRESS)
         {
@@ -90,12 +136,12 @@ namespace PCFW
 
     void setSwapInterval(window *window, int interval)
     {
-        typedef BOOL(WINAPI * PFNWGLSWAPINTERVALEXTPROC)(int);
-        static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = nullptr;
+        typedef BOOL(WINAPI * SWAP_INTERVAL)(int);
+        static SWAP_INTERVAL wglSwapIntervalEXT = nullptr;
 
         if (!wglSwapIntervalEXT)
         {
-            wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+            wglSwapIntervalEXT = (SWAP_INTERVAL)wglGetProcAddress("wglSwapIntervalEXT");
         }
 
         if (wglSwapIntervalEXT)
@@ -106,29 +152,33 @@ namespace PCFW
 
     void INTERNAL_createContext(window *window)
     {
-
+        // Changing the attributes of the window
         SetWindowLongPtr(window->_handle_window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 
+        // Getting the device context 
         window->_handle_device_context = GetDC(window->_handle_window);
 
-        PIXELFORMATDESCRIPTOR pfd = {};
-        pfd.nSize = sizeof(pfd);
-        pfd.nVersion = 1;
-        pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER | PFD_DRAW_TO_WINDOW;
-        pfd.iPixelType = PFD_TYPE_RGBA;
-        pfd.cColorBits = 24;
-        pfd.cRedBits = 8;
-        pfd.cGreenBits = 8;
-        pfd.cBlueBits = 8;
-        pfd.cAlphaBits = 8;
-        pfd.cDepthBits = 24;
+        // Configuring pixel format
+        PIXELFORMATDESCRIPTOR pixel_format_descriptor = {};
+        pixel_format_descriptor.nSize = sizeof(pixel_format_descriptor);
+        pixel_format_descriptor.nVersion = 1;
+        pixel_format_descriptor.dwFlags = PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER | PFD_DRAW_TO_WINDOW;
+        pixel_format_descriptor.iPixelType = PFD_TYPE_RGBA;
+        pixel_format_descriptor.cColorBits = 24;
+        pixel_format_descriptor.cRedBits = 8;
+        pixel_format_descriptor.cGreenBits = 8;
+        pixel_format_descriptor.cBlueBits = 8;
+        pixel_format_descriptor.cAlphaBits = 8;
+        pixel_format_descriptor.cDepthBits = 24;
 
-        int pixelFormat = ChoosePixelFormat(window->_handle_device_context, &pfd);
-        SetPixelFormat(window->_handle_device_context, pixelFormat, &pfd);
+        int pixel_format = ChoosePixelFormat(window->_handle_device_context, &pixel_format_descriptor);
+        SetPixelFormat(window->_handle_device_context, pixel_format, &pixel_format_descriptor);
 
+        // Creating context
         window->_context = wglCreateContext(window->_handle_device_context);
         if (!window->_context)
         {
+            PCLOG::error("Failed to create context");
             destroyWindow(window);
             return;
         }
@@ -136,7 +186,8 @@ namespace PCFW
 
     void INTERNAL_setWindowTitle(window *window)
     {
-        SetWindowTextA(window->_handle_window, window->_title);
+        if (!SetWindowTextA(window->_handle_window, window->_title))
+            PCLOG::warning("No window to set title");
     }
 
     bool windowShouldClose(window *window)
@@ -151,10 +202,23 @@ namespace PCFW
 
     void setFramebufferSizeCallback(window *window, framebuffer_size_callback callback)
     {
-        if (window)
+        if (!window)
         {
-            window->_framebuffer_size_callback = callback;
+            PCLOG::warning("No window to set framebuffer size callback");
+            return;
         }
+        window->_framebuffer_size_callback = callback;
+    }
+    
+    void setMouseCallback(window *window, mouse_callback callback)
+    {
+        if (!window)
+        {
+            PCLOG::warning("No window to set mouse callback");
+            return;
+        }
+        
+        window->_mouse_callback = callback;
     }
 
     int getWindowWidth(window *window)
@@ -169,15 +233,14 @@ namespace PCFW
 
     void pollEvents(window *window)
     {
-        MSG msg;
-        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        while (PeekMessage(&window->_message, nullptr, 0, 0, PM_REMOVE))
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            TranslateMessage(&window->_message);
+            DispatchMessage(&window->_message);
         }
     }
 
-    LRESULT CALLBACK windowProc(HWND handle_window, UINT u_message, WPARAM w_param, LPARAM l_param)
+    static LRESULT CALLBACK windowProc(HWND handle_window, UINT u_message, WPARAM w_param, LPARAM l_param)
     {
         window *_window = reinterpret_cast<window *>(GetWindowLongPtr(handle_window, GWLP_USERDATA));
 
@@ -198,6 +261,30 @@ namespace PCFW
                     _window->_framebuffer_size_callback(_window->_width, _window->_height);
                 }
             }
+            break;
+
+        case WM_LBUTTONDOWN:
+            handleMouse(_window, MOUSE_LEFT_BUTTON, MOUSE_PRESS_BUTTON);
+            break;
+            
+        case WM_LBUTTONUP:
+            handleMouse(_window, MOUSE_LEFT_BUTTON, MOUSE_RELEASE_BUTTON);
+            break;
+        
+        case WM_RBUTTONDOWN:
+            handleMouse(_window, MOUSE_RIGHT_BUTTON, MOUSE_PRESS_BUTTON);
+            break;
+        
+        case WM_RBUTTONUP:
+            handleMouse(_window, MOUSE_RIGHT_BUTTON, MOUSE_RELEASE_BUTTON);
+            break;
+
+        case WM_MBUTTONDOWN:
+            handleMouse(_window, MOUSE_MIDDLE_BUTTON, MOUSE_PRESS_BUTTON);
+            break;
+        
+        case WM_MBUTTONUP:
+            handleMouse(_window, MOUSE_MIDDLE_BUTTON, MOUSE_RELEASE_BUTTON);
             break;
 
         case WM_KEYDOWN:
@@ -229,26 +316,38 @@ namespace PCFW
         wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
         RegisterClassExA(&wc);
 
-        window->_handle_window = CreateWindowExA(
-            0, "PCFW_WindowClass", window->_title, WS_OVERLAPPEDWINDOW,
-            CW_USEDEFAULT, CW_USEDEFAULT, window->_width, window->_height, nullptr, nullptr, wc.hInstance, nullptr);
+        window->_handle_window = CreateWindowExA(0, "PCFW_WindowClass", window->_title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, window->_width, window->_height, nullptr, nullptr, wc.hInstance, nullptr);
 
         if (!window->_handle_window)
         {
+            PCLOG::error("Failed to create window");
             delete window;
             return;
         }
     }
+    
     void INTERNAL_showWindow(window *window)
     {
-        ShowWindow(window->_handle_window, SW_SHOW);
-        UpdateWindow(window->_handle_window);
+        if (ShowWindow(window->_handle_window, SW_SHOW))
+        {
+            PCLOG::warning("No window to show");
+            return;
+        }
+        
+        if (!UpdateWindow(window->_handle_window))
+        {
+            PCLOG::error("Failed to update window");
+            return;
+        }
     }
 
     void destroyWindow(window *window)
     {
         if (!window)
+        {
+            PCLOG::warning("No window to destroy");
             return;
+        }
 
         if (window->_context)
         {
@@ -267,14 +366,33 @@ namespace PCFW
 
     void swapBuffers(window *window)
     {
-        if (window && window->_handle_device_context)
-            SwapBuffers(window->_handle_device_context);
+        if (!window)
+        {
+            PCLOG::warning("No window to swap buffer");
+            return;
+        }
+        
+        if (!window->_handle_device_context)
+        {
+            PCLOG::error("Failed to get handle device context to swap buffer");
+            return;
+        }
+        SwapBuffers(window->_handle_device_context);
     }
 
     void makeContextCurrent(window *window)
     {
-        if (window)
-            wglMakeCurrent(window->_handle_device_context, window->_context);
+        if (!window)
+        {
+            PCLOG::warning("No window to make context");
+            return;
+        }
+        if (!window->_handle_device_context)
+        {
+            PCLOG::error("Failed to get handle device context to make the context of a window");
+            return;
+        }
+        wglMakeCurrent(window->_handle_device_context, window->_context);
     }
 } // namespace PCFW
 

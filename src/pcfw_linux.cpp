@@ -16,6 +16,13 @@
 
 namespace PCFW
 {
+    constexpr int MOUSE_LEFT_BUTTON = 1;
+    constexpr int MOUSE_MIDDLE_BUTTON = 2;
+    constexpr int MOUSE_RIGHT_BUTTON = 3;
+    
+    constexpr int MOUSE_PRESS_BUTTON = 4;
+    constexpr int MOUSE_RELEASE_BUTTON = 5;
+    
     constexpr int KEY_LEFT_SHIFT = 160;
     constexpr int KEY_RIGHT_SHIFT = 161;
 
@@ -75,19 +82,19 @@ namespace PCFW
     constexpr int KEY_X = 53;
     constexpr int KEY_Y = 29;
     constexpr int KEY_Z = 52;
-    
+
     void getCursorPosition(window *window, int *x, int *y)
     {
         Window _root;
         Window _child;
-        
+
         int _root_x, _root_y;
-        
+
         unsigned int _mask;
-        
+
         XQueryPointer(window->_display, window->_window, &_root, &_child, &_root_x, &_root_y, x, y, &_mask);
     }
-    
+
     int getKey(window *window, int key, int type)
     {
         if (type == KEY_PRESS)
@@ -132,6 +139,17 @@ namespace PCFW
         window->_framebuffer_size_callback = callback;
     }
 
+    void setMouseCallback(window *window, mouse_callback callback)
+    {
+        if (!window)
+        {
+            PCLOG::warning("No window to set mouse callback");
+            return;
+        }
+
+        window->_mouse_callback = callback;
+    }
+
     bool windowShouldClose(window *window)
     {
         return window ? window->_should_close : false;
@@ -173,6 +191,20 @@ namespace PCFW
                 }
                 break;
             }
+            case ButtonPress:
+            {
+                if (window->_mouse_callback)
+                {
+                    window->_mouse_callback(window->_event.xbutton.button, window->_event.xbutton.type, window->_event.xbutton.state);
+                }
+                break;
+            }
+            case ButtonRelease:
+                if (window->_mouse_callback)
+                {
+                    window->_mouse_callback(window->_event.xbutton.button, window->_event.xbutton.type, window->_event.xbutton.state);
+                }
+                break;
             case KeyPress:
             {
                 window->key_state[window->_event.xkey.keycode] = true;
@@ -227,7 +259,7 @@ namespace PCFW
 
         window->_wm_delete_window = XInternAtom(window->_display, "WM_DELETE_WINDOW", False);
         XSetWMProtocols(window->_display, window->_window, &window->_wm_delete_window, 1);
-        XSelectInput(window->_display, window->_window, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask);
+        XSelectInput(window->_display, window->_window, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask);
 
         if (!window)
         {
