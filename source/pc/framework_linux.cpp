@@ -12,7 +12,7 @@
 // #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include <pclog/pclog.hpp>
+#include <pc/log.hpp>
 
 namespace PC
 {
@@ -91,7 +91,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("No window to set window limits");
+            Log::warning("No window to set window limits");
             return;
         }
         
@@ -100,7 +100,7 @@ namespace PC
         
         if (!size_hints)
         {
-            PCLOG::error("Failed to allocate memory for size_hints");
+            Log::error("Failed to allocate memory for size_hints");
             return;
         }
         
@@ -164,7 +164,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::error("Failed to set framebuffer size callback");
+            Log::error("Failed to set framebuffer size callback");
             return;
         }
         window->_framebuffer_size_callback = callback;
@@ -174,7 +174,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("No window to set mouse callback");
+            Log::warning("No window to set mouse callback");
             return;
         }
 
@@ -252,7 +252,7 @@ namespace PC
     {
         if (!window->_display && !window->_window)
         {
-            PCLOG::error("Failed to show window");
+            Log::error("Failed to show window");
             return;
         }
         XMapWindow(window->_display, window->_window);
@@ -262,7 +262,7 @@ namespace PC
     {
         if (!window->_display && !window->_window)
         {
-            PCLOG::error("Failed to set internal window title");
+            Log::error("Failed to set internal window title");
             return;
         }
         XStoreName(window->_display, window->_window, window->_title);
@@ -273,7 +273,7 @@ namespace PC
         window->_display = XOpenDisplay(nullptr);
         if (!window->_display && window)
         {
-            PCLOG::error("Failed to open X display");
+            Log::error("Failed to open X display");
             delete window;
             return;
         }
@@ -294,7 +294,7 @@ namespace PC
 
         if (!window)
         {
-            PCLOG::error("Failed to create window");
+            Log::error("Failed to create window");
             delete window;
         }
     }
@@ -303,7 +303,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("No window to create context");
+            Log::warning("No window to create context");
         }
         window->_context = glXCreateContext(window->_display, window->_visual_info, nullptr, GL_TRUE);
     }
@@ -317,7 +317,7 @@ namespace PC
         
         if (!_address)
         {
-            PCLOG::error("Failed to load proc");
+            Log::error("Failed to load proc");
             return nullptr;
         }
 
@@ -328,7 +328,7 @@ namespace PC
     void destroy_window(window *window)
     {
         if (!window)
-            PCLOG::warning("No window to destroy");
+            Log::warning("No window to destroy");
         return;
 
         if (window->_context)
@@ -359,7 +359,7 @@ namespace PC
     {
         if (!window->_display && !window->_window)
         {
-            PCLOG::warning("No window to swap buffers");
+            Log::warning("No window to swap buffers");
             return;
         }
         glXSwapBuffers(window->_display, window->_window);
@@ -368,7 +368,7 @@ namespace PC
     void make_context_current(window *window)
     {
         if (!glXMakeCurrent(window->_display, window->_window, window->_context))
-            PCLOG::warning("No window to make context");
+            Log::warning("No window to make context");
     }
 } // namespace PCFW
 

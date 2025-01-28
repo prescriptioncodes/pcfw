@@ -6,7 +6,7 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <pc/framework.hpp>
-#include <pclog/pclog.hpp>
+#include <pc/log.hpp>
 
 void callback(PC::window *window, int w, int h)
 {
@@ -20,25 +20,25 @@ void mouse_callback(int mouse_button, int status, int mods)
 {
     if (mouse_button == PC::MOUSE_LEFT_BUTTON && status == PC::MOUSE_PRESS_BUTTON)
     {
-        PCLOG::info("Left mouse button pressed");
+        PC::Log::info("Left mouse button pressed");
         return;
     }
     if (mouse_button == PC::MOUSE_RIGHT_BUTTON && status == PC::MOUSE_PRESS_BUTTON)
     {
-        PCLOG::info("Right mouse button pressed");
+        PC::Log::info("Right mouse button pressed");
         return;
     }
 
     if (mouse_button == PC::MOUSE_MIDDLE_BUTTON && status == PC::MOUSE_PRESS_BUTTON)
     {
-        PCLOG::info("Middle mouse button pressed");
+        PC::Log::info("Middle mouse button pressed");
         return;
     }
 }
 
 int main(void)
 {
-    PCLOG::info("Hello, world!");
+    PC::Log::info("Hello, world!");
 
     PC::window *window = PC::create_window(800, 600, "GL");
 
@@ -54,7 +54,7 @@ int main(void)
 
     if (!gladLoadGLLoader(PC::get_proc_address))
     {
-        PCLOG::error("Failed to load glad");
+        PC::Log::error("Failed to load glad");
         return 1;
     }
 

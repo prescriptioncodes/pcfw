@@ -28,7 +28,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
 )
 
 set(CPACK_GENERATOR "DEB")
-set(CPACK_PACKAGE_NAME "pcfw")
+set(CPACK_PACKAGE_NAME "libpcfw")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_VENDOR "okanauta")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/prescriptioncodes/idfw")

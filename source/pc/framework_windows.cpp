@@ -10,7 +10,7 @@
 #include "pc/framework_internal.hpp"
 
 #include "pc/framework.hpp"
-#include <pclog/pclog.hpp>
+#include <pc/log.hpp>
 
 namespace PC
 {
@@ -89,7 +89,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("No window to set limits");
+            Log::warning("No window to set limits");
             return;
         }
 
@@ -123,14 +123,14 @@ namespace PC
         // Getting the cursor position
         if (!GetCursorPos(&_point))
         {
-            PCLOG::error("Failed to get cursor position");
+            Log::error("Failed to get cursor position");
             return;
         }
 
         // Converting the screen coordinates from the point on the screen to client-area coordinates
         if (!ScreenToClient(window->_handle_window, &_point))
         {
-            PCLOG::error("Failed to pass screen to client");
+            Log::error("Failed to pass screen to client");
             return;
         }
 
@@ -143,7 +143,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("function `get_key` doesn't know what window should get the keys");
+            Log::warning("function `get_key` doesn't know what window should get the keys");
             return 0;
         }
 
@@ -179,7 +179,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::error("No window to create context");
+            Log::error("No window to create context");
             return;
         }
 
@@ -209,7 +209,7 @@ namespace PC
         window->_context = wglCreateContext(window->_handle_device_context);
         if (!window->_context)
         {
-            PCLOG::error("Failed to create context");
+            Log::error("Failed to create context");
             destroy_window(window);
             return;
         }
@@ -218,7 +218,7 @@ namespace PC
     void INTERNAL_set_window_title(window *window)
     {
         if (!SetWindowTextA(window->_handle_window, window->_title))
-            PCLOG::warning("No window to set title");
+            Log::warning("No window to set title");
     }
 
     bool window_should_close(window *window)
@@ -235,7 +235,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("No window to set framebuffer size callback");
+            Log::warning("No window to set framebuffer size callback");
             return;
         }
         window->_framebuffer_size_callback = callback;
@@ -245,7 +245,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("No window to set mouse callback");
+            Log::warning("No window to set mouse callback");
             return;
         }
 
@@ -381,7 +381,7 @@ namespace PC
 
         if (!window->_handle_window)
         {
-            PCLOG::error("Failed to create window");
+            Log::error("Failed to create window");
             delete window;
             return;
         }
@@ -391,13 +391,13 @@ namespace PC
     {
         if (ShowWindow(window->_handle_window, SW_SHOW))
         {
-            PCLOG::warning("No window to show");
+            Log::warning("No window to show");
             return;
         }
 
         if (!UpdateWindow(window->_handle_window))
         {
-            PCLOG::error("Failed to update window");
+            Log::error("Failed to update window");
             return;
         }
     }
@@ -406,7 +406,7 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("No window to destroy");
+            Log::warning("No window to destroy");
             return;
         }
 
@@ -429,13 +429,13 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("No window to swap buffer");
+            Log::warning("No window to swap buffer");
             return;
         }
 
         if (!window->_handle_device_context)
         {
-            PCLOG::error("Failed to get handle device context to swap buffer");
+            Log::error("Failed to get handle device context to swap buffer");
             return;
         }
         SwapBuffers(window->_handle_device_context);
@@ -445,12 +445,12 @@ namespace PC
     {
         if (!window)
         {
-            PCLOG::warning("No window to make context");
+            Log::warning("No window to make context");
             return;
         }
         if (!window->_handle_device_context)
         {
-            PCLOG::error("Failed to get handle device context to make the context of a window");
+            Log::error("Failed to get handle device context to make the context of a window");
             return;
         }
         wglMakeCurrent(window->_handle_device_context, window->_context);
