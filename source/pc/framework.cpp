@@ -1,16 +1,14 @@
 // Author: oknauta
-// License:
+// License: MIT
 // File: window.cpp
 // Date: 2024-12-10
 
-#include "pcfw/pcfw.hpp"
+#include "pc/framework.hpp"
+#include "pc/framework_internal.hpp"
 
-#include "pcfw/pcfw_internal.hpp"
-
-namespace PCFW
+namespace PC
 {
-    
-    window *createWindow(int width, int height, const char *title)
+    window *create_window(int width, int height, const char *title)
     {
         window *_window = new window;
         if (!_window)
@@ -23,10 +21,10 @@ namespace PCFW
         _window->_width = width;
         _window->_height = height;
 
-        INTERNAL_createWindow(_window);
-        INTERNAL_showWindow(_window);
-        INTERNAL_setWindowTitle(_window);
-        INTERNAL_createContext(_window);
+        INTERNAL_create_window(_window);
+        INTERNAL_show_window(_window);
+        INTERNAL_set_window_title(_window);
+        INTERNAL_create_context(_window);
 
         return _window;
     }

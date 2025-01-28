@@ -16,11 +16,19 @@
 #define PCFW_API
 #endif
 
-namespace PCFW
+namespace PC
 {
-    typedef void (*framebuffer_size_callback)(int width, int height);
-    typedef void (*mouse_callback)(int mouse_button, int status, int mods);
+    constexpr int DONT_CARE = -1;
+
     typedef struct window window;
+    typedef void (*framebuffer_size_callback)(PC::window *window, int width, int height);
+    typedef void (*mouse_callback)(int mouse_button, int status, int mods);
+
+    typedef void *(*load_proc)(const char *name);
+
+    PCFW_API void *get_proc_address(const char *proc);
+
+    PCFW_API void set_window_limits(window *window, int minimum_width, int minimum_height, int maximum_width, int maximum_height);
 
     /**
      * @brief Gets a key from keyboard or mouse
@@ -29,7 +37,7 @@ namespace PCFW
      * @param type If it will be `KEY_RELEASE` or `KEY_PRESS`
      * @return A key pressed or released
      */
-    PCFW_API int getKey(window *window, int key, int type);
+    PCFW_API int get_key(window *window, int key, int type);
 
     /**
      * @brief Creates a window with predefined size and title
@@ -38,49 +46,49 @@ namespace PCFW
      * @param title The title in `const char *`
      * @return A created window
      */
-    PCFW_API window *createWindow(int width, int height, const char *title);
+    PCFW_API window *create_window(int width, int height, const char *title);
 
     /**
      * @brief Gets the width of a window
      * @param window What that will get the width
      * @return A width of a window in `int`
      */
-    PCFW_API int getWindowWidth(window *window);
+    PCFW_API int get_window_width(window *window);
 
     /**
      * @brief Gets the height of a window
      * @param window What that will get the height
      * @return A height of a window in `int`
      */
-    PCFW_API int getWindowHeight(window *window);
+    PCFW_API int get_window_height(window *window);
 
     /**
      * @brief Destroys a window
      * @param window What that will destroyed
      * @return A destroyed window
      */
-    PCFW_API void destroyWindow(window *window);
+    PCFW_API void destroy_window(window *window);
 
     /**
      * @brief Swap frame on screen
      * @param window What that will swap the frame
      * @return A swapped frame
      */
-    PCFW_API void swapBuffers(window *window);
+    PCFW_API void swap_buffers(window *window);
 
     /**
      * @brief Makes the context of a window
      * @param window What that will make the context
      * @return A made context
      */
-    PCFW_API void makeContextCurrent(window *window);
+    PCFW_API void make_context_current(window *window);
 
     /**
      * @brief Poll the events
      * @param window What that will poll the events
      * @return A polled events at window
      */
-    PCFW_API void pollEvents(window *window);
+    PCFW_API void poll_events(window *window);
 
     /**
      * @brief Sets the framebuffer size callback
@@ -88,14 +96,14 @@ namespace PCFW
      * @param callback The callback
      * @return A callbacked window
      */
-    PCFW_API void setFramebufferSizeCallback(window *window, framebuffer_size_callback callback);
+    PCFW_API void set_framebuffer_size_callback(window *window, framebuffer_size_callback callback);
 
     /**
      * @brief Sets the mouse callback
      * @param window What will receive the callback
      * @param callback The callback
      */
-    PCFW_API void setMouseCallback(window *window, mouse_callback callback);
+    PCFW_API void set_mouse_callback(window *window, mouse_callback callback);
 
     /**
      * @brief Sets the swap interval of a window
@@ -103,20 +111,20 @@ namespace PCFW
      * @param interval The interval. It can be `1` for V-Sync or `0` for unlimited FPS
      * @return A setted swap interval
      */
-    PCFW_API void setSwapInterval(window *window, int interval);
+    PCFW_API void set_swap_interval(window *window, int interval);
 
     /**
      * @brief Detects if a window should close
      * @param window What will be detected
      * @return If a window should should close
      */
-    PCFW_API bool windowShouldClose(window *window);
+    PCFW_API bool window_should_close(window *window);
 
     /**
      * @brief Gets the title of a window
      * @param window What will be got the title
      */
-    PCFW_API const char *getWindowTitle(window *window);
+    PCFW_API const char *get_window_title(window *window);
 
     /**
      * @brief Gets the cursor position
@@ -124,18 +132,20 @@ namespace PCFW
      * @param x The variable that the value will be storaged the horizontal position
      * @param y The variable that the value will be storaged the vertical position
      */
-    PCFW_API void getCursorPosition(window *window, int *x, int *y);
+    PCFW_API void get_cursor_position(window *window, int *x, int *y);
+
+    // Keys
 
     constexpr int KEY_PRESS = 0;
     constexpr int KEY_RELEASE = 1;
-    
+
     extern PCFW_API const int MOUSE_LEFT_BUTTON;
     extern PCFW_API const int MOUSE_RIGHT_BUTTON;
     extern PCFW_API const int MOUSE_MIDDLE_BUTTON;
-    
+
     extern PCFW_API const int MOUSE_PRESS_BUTTON;
     extern PCFW_API const int MOUSE_RELEASE_BUTTON;
-    
+
     extern PCFW_API const int KEY_LEFT_SHIFT;
     extern PCFW_API const int KEY_RIGHT_SHIFT;
 
@@ -196,6 +206,6 @@ namespace PCFW
     extern PCFW_API const int KEY_Y;
     extern PCFW_API const int KEY_Z;
 
-} // namespace PCFW
+} // namespace PC
 
 #endif // _PCFW_HPP

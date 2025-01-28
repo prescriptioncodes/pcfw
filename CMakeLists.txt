@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.25.0)
-project(pcfw VERSION 0.2.0 LANGUAGES CXX)
+project(pcfw VERSION 3 LANGUAGES CXX)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_library(pcfw SHARED src/pcfw_linux.cpp src/pcfw_windows.cpp src/window.cpp)
+add_library(pcfw SHARED
+            source/pc/framework.cpp
+            source/pc/framework_windows.cpp
+            source/pc/framework_linux.cpp)
 
 if(UNIX)
     target_link_libraries(pcfw PUBLIC X11 GL pclog)

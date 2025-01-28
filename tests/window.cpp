@@ -3,30 +3,33 @@
 // File: window.c
 // Date: 2024-11-18
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <iostream>
-#include <pcfw/pcfw.hpp>
+#include <pc/framework.hpp>
 #include <pclog/pclog.hpp>
 
-void callback(int w, int h)
+void callback(PC::window *window, int w, int h)
 {
     glViewport(0, 0, w, h);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    PC::swap_buffers(window);
 }
 
 void mouse_callback(int mouse_button, int status, int mods)
 {
-    if(mouse_button == PCFW::MOUSE_LEFT_BUTTON && status == PCFW::MOUSE_PRESS_BUTTON)
+    if (mouse_button == PC::MOUSE_LEFT_BUTTON && status == PC::MOUSE_PRESS_BUTTON)
     {
         PCLOG::info("Left mouse button pressed");
         return;
     }
-    if(mouse_button == PCFW::MOUSE_RIGHT_BUTTON && status == PCFW::MOUSE_PRESS_BUTTON)
+    if (mouse_button == PC::MOUSE_RIGHT_BUTTON && status == PC::MOUSE_PRESS_BUTTON)
     {
         PCLOG::info("Right mouse button pressed");
         return;
     }
-    
-    if(mouse_button == PCFW::MOUSE_MIDDLE_BUTTON && status == PCFW::MOUSE_PRESS_BUTTON)
+
+    if (mouse_button == PC::MOUSE_MIDDLE_BUTTON && status == PC::MOUSE_PRESS_BUTTON)
     {
         PCLOG::info("Middle mouse button pressed");
         return;
@@ -35,44 +38,53 @@ void mouse_callback(int mouse_button, int status, int mods)
 
 int main(void)
 {
-    PCFW::window *window = PCFW::createWindow(800, 600, "GL");
+    PCLOG::info("Hello, world!");
 
-    PCFW::makeContextCurrent(window);
+    PC::window *window = PC::create_window(800, 600, "GL");
 
-    PCFW::setFramebufferSizeCallback(window, callback);
+    PC::make_context_current(window);
 
-    PCFW::setMouseCallback(window, mouse_callback);
+    PC::set_framebuffer_size_callback(window, callback);
 
-    PCFW::setSwapInterval(window, 1);
+    PC::set_mouse_callback(window, mouse_callback);
 
-    glewInit();
+    PC::set_swap_interval(window, 1);
+
+    PC::set_window_limits(window, 300, 300, PC::DONT_CARE, PC::DONT_CARE);
+
+    if (!gladLoadGLLoader(PC::get_proc_address))
+    {
+        PCLOG::error("Failed to load glad");
+        return 1;
+    }
+
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    PC::swap_buffers(window);
 
     int cursor_x, cursor_y;
 
-    while (!PCFW::windowShouldClose(window))
+    while (!PC::window_should_close(window))
     {
+        PC::poll_events(window);
+
         // PCFW::getCursorPosition(window, &cursor_x, &cursor_y);
         // std::cout << cursor_x << "x" << cursor_y << "\n";
 
-        if (PCFW::getKey(window, PCFW::KEY_A, PCFW::KEY_PRESS))
+        if (PC::get_key(window, PC::KEY_A, PC::KEY_PRESS))
             std::cout << "A pressed!\n";
-        if (PCFW::getKey(window, PCFW::KEY_0, PCFW::KEY_PRESS))
+        if (PC::get_key(window, PC::KEY_0, PC::KEY_PRESS))
             std::cout << "0 pressed!\n";
-        if (PCFW::getKey(window, PCFW::KEY_F1, PCFW::KEY_PRESS))
+        if (PC::get_key(window, PC::KEY_F1, PC::KEY_PRESS))
             std::cout << "F1 pressed!\n";
 
-        glClear(GL_COLOR_BUFFER_BIT);
+        // glBegin(GL_TRIANGLES);
 
-        glBegin(GL_TRIANGLES);
+        // glVertex2f(0.0f, 1.0f);
+        // glVertex2f(-1.0f, -1.0f);
+        // glVertex2f(1.0f, -1.0f);
 
-        glVertex2f(0.0f, 1.0f);
-        glVertex2f(-1.0f, -1.0f);
-        glVertex2f(1.0f, -1.0f);
-
-        glEnd();
-
-        PCFW::swapBuffers(window);
-        PCFW::pollEvents(window);
+        // glEnd();
     }
 
     return 0;

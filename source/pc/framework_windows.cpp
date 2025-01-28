@@ -5,21 +5,24 @@
 
 #ifdef _WIN32
 
-#include "pcfw/pcfw_internal.hpp"
+#include <windows.h>
 
+#include "pc/framework_internal.hpp"
+
+#include "pc/framework.hpp"
 #include <pclog/pclog.hpp>
 
-namespace PCFW
+namespace PC
 {
     // Keys
-    
+
     const int MOUSE_LEFT_BUTTON = 0;
     const int MOUSE_RIGHT_BUTTON = 2;
     const int MOUSE_MIDDLE_BUTTON = 1;
-    
+
     const int MOUSE_PRESS_BUTTON = 0;
     const int MOUSE_RELEASE_BUTTON = 1;
-    
+
     constexpr int KEY_LEFT_SHIFT = 0xA0;
     constexpr int KEY_RIGHT_SHIFT = 0xA1;
 
@@ -80,45 +83,67 @@ namespace PCFW
     constexpr int KEY_Y = 0x59;
     constexpr int KEY_Z = 0x5A;
 
-    static void handleMouse(window *window, const int &BUTTON, const int &ACTION)
+    // Functions
+
+    void set_window_limits(window *window, int minimum_width, int minimum_height, int maximum_width, int maximum_height)
+    {
+        if (!window)
+        {
+            PCLOG::warning("No window to set limits");
+            return;
+        }
+
+        window->_minimum_width = minimum_width;
+        window->_minimum_height = minimum_height;
+        window->_maximum_width = maximum_width;
+        window->_maximum_height = maximum_height;
+    }
+
+    void *get_proc_address(const char *proc)
+    {
+        void *proc_address = (void *)wglGetProcAddress(proc);
+
+        return proc_address;
+    }
+
+    static void handle_mouse(window *window, const int &BUTTON, const int &ACTION)
     {
         if (!window)
         {
             return;
         }
-        
+
         window->_mouse_callback(BUTTON, ACTION, 0);
     }
-    
-    void getCursorPosition(window *window, int *x, int *y)
+
+    void get_cursor_position(window *window, int *x, int *y)
     {
         POINT _point; // Point that will storage the x and y
-        
-        
+
         // Getting the cursor position
         if (!GetCursorPos(&_point))
         {
             PCLOG::error("Failed to get cursor position");
             return;
         }
-        
+
         // Converting the screen coordinates from the point on the screen to client-area coordinates
         if (!ScreenToClient(window->_handle_window, &_point))
         {
             PCLOG::error("Failed to pass screen to client");
             return;
         }
-        
+
         // Giving the _point.x/.y for x/y
         *x = _point.x;
         *y = _point.y;
     }
-    
-    int getKey(window *window, int key, int type)
+
+    int get_key(window *window, int key, int type)
     {
         if (!window)
         {
-            PCLOG::warning("function `getKey` doesn't know what window should get the keys");
+            PCLOG::warning("function `get_key` doesn't know what window should get the keys");
             return 0;
         }
 
@@ -134,7 +159,7 @@ namespace PCFW
         return 0;
     }
 
-    void setSwapInterval(window *window, int interval)
+    void set_swap_interval(window *window, int interval)
     {
         typedef BOOL(WINAPI * SWAP_INTERVAL)(int);
         static SWAP_INTERVAL wglSwapIntervalEXT = nullptr;
@@ -150,12 +175,18 @@ namespace PCFW
         }
     }
 
-    void INTERNAL_createContext(window *window)
+    void INTERNAL_create_context(window *window)
     {
+        if (!window)
+        {
+            PCLOG::error("No window to create context");
+            return;
+        }
+
         // Changing the attributes of the window
         SetWindowLongPtr(window->_handle_window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 
-        // Getting the device context 
+        // Getting the device context
         window->_handle_device_context = GetDC(window->_handle_window);
 
         // Configuring pixel format
@@ -179,28 +210,28 @@ namespace PCFW
         if (!window->_context)
         {
             PCLOG::error("Failed to create context");
-            destroyWindow(window);
+            destroy_window(window);
             return;
         }
     }
 
-    void INTERNAL_setWindowTitle(window *window)
+    void INTERNAL_set_window_title(window *window)
     {
         if (!SetWindowTextA(window->_handle_window, window->_title))
             PCLOG::warning("No window to set title");
     }
 
-    bool windowShouldClose(window *window)
+    bool window_should_close(window *window)
     {
         return window->_should_close ? true : false;
     }
 
-    const char *getWindowTitle(window *window)
+    const char *get_window_title(window *window)
     {
         return window ? window->_title : nullptr;
     }
 
-    void setFramebufferSizeCallback(window *window, framebuffer_size_callback callback)
+    void set_framebuffer_size_callback(window *window, framebuffer_size_callback callback)
     {
         if (!window)
         {
@@ -209,29 +240,29 @@ namespace PCFW
         }
         window->_framebuffer_size_callback = callback;
     }
-    
-    void setMouseCallback(window *window, mouse_callback callback)
+
+    void set_mouse_callback(window *window, mouse_callback callback)
     {
         if (!window)
         {
             PCLOG::warning("No window to set mouse callback");
             return;
         }
-        
+
         window->_mouse_callback = callback;
     }
 
-    int getWindowWidth(window *window)
+    int get_window_width(window *window)
     {
         return window ? window->_width : 0;
     }
 
-    int getWindowHeight(window *window)
+    int get_window_height(window *window)
     {
         return window ? window->_height : 0;
     }
 
-    void pollEvents(window *window)
+    void poll_events(window *window)
     {
         while (PeekMessage(&window->_message, nullptr, 0, 0, PM_REMOVE))
         {
@@ -240,7 +271,7 @@ namespace PCFW
         }
     }
 
-    static LRESULT CALLBACK windowProc(HWND handle_window, UINT u_message, WPARAM w_param, LPARAM l_param)
+    static LRESULT CALLBACK window_proc(HWND handle_window, UINT u_message, WPARAM w_param, LPARAM l_param)
     {
         window *_window = reinterpret_cast<window *>(GetWindowLongPtr(handle_window, GWLP_USERDATA));
 
@@ -251,6 +282,36 @@ namespace PCFW
                 _window->_should_close = true;
             break;
 
+        case WM_GETMINMAXINFO:
+        {
+            if (!_window)
+            {
+                break;
+            }
+
+            LPMINMAXINFO minimum_maximum_info = (LPMINMAXINFO)l_param;
+            if (_window->_minimum_width > 0)
+            {
+                minimum_maximum_info->ptMinTrackSize.x = _window->_minimum_width;
+            }
+
+            if (_window->_minimum_height > 0)
+            {
+                minimum_maximum_info->ptMinTrackSize.y = _window->_minimum_height;
+            }
+
+            if (_window->_maximum_width > 0)
+            {
+                minimum_maximum_info->ptMaxTrackSize.x = _window->_maximum_width;
+            }
+
+            if (_window->_maximum_height > 0)
+            {
+                minimum_maximum_info->ptMaxTrackSize.y = _window->_maximum_height;
+            }
+            break;
+        }
+
         case WM_SIZE:
             if (_window)
             {
@@ -258,33 +319,33 @@ namespace PCFW
                 _window->_height = HIWORD(l_param);
                 if (_window->_framebuffer_size_callback)
                 {
-                    _window->_framebuffer_size_callback(_window->_width, _window->_height);
+                    _window->_framebuffer_size_callback(_window, _window->_width, _window->_height);
                 }
             }
             break;
 
         case WM_LBUTTONDOWN:
-            handleMouse(_window, MOUSE_LEFT_BUTTON, MOUSE_PRESS_BUTTON);
+            handle_mouse(_window, MOUSE_LEFT_BUTTON, MOUSE_PRESS_BUTTON);
             break;
-            
+
         case WM_LBUTTONUP:
-            handleMouse(_window, MOUSE_LEFT_BUTTON, MOUSE_RELEASE_BUTTON);
+            handle_mouse(_window, MOUSE_LEFT_BUTTON, MOUSE_RELEASE_BUTTON);
             break;
-        
+
         case WM_RBUTTONDOWN:
-            handleMouse(_window, MOUSE_RIGHT_BUTTON, MOUSE_PRESS_BUTTON);
+            handle_mouse(_window, MOUSE_RIGHT_BUTTON, MOUSE_PRESS_BUTTON);
             break;
-        
+
         case WM_RBUTTONUP:
-            handleMouse(_window, MOUSE_RIGHT_BUTTON, MOUSE_RELEASE_BUTTON);
+            handle_mouse(_window, MOUSE_RIGHT_BUTTON, MOUSE_RELEASE_BUTTON);
             break;
 
         case WM_MBUTTONDOWN:
-            handleMouse(_window, MOUSE_MIDDLE_BUTTON, MOUSE_PRESS_BUTTON);
+            handle_mouse(_window, MOUSE_MIDDLE_BUTTON, MOUSE_PRESS_BUTTON);
             break;
-        
+
         case WM_MBUTTONUP:
-            handleMouse(_window, MOUSE_MIDDLE_BUTTON, MOUSE_RELEASE_BUTTON);
+            handle_mouse(_window, MOUSE_MIDDLE_BUTTON, MOUSE_RELEASE_BUTTON);
             break;
 
         case WM_KEYDOWN:
@@ -305,11 +366,11 @@ namespace PCFW
         return 0;
     }
 
-    void INTERNAL_createWindow(window *window)
+    void INTERNAL_create_window(window *window)
     {
 
         WNDCLASSEXA wc = {};
-        wc.lpfnWndProc = windowProc;
+        wc.lpfnWndProc = window_proc;
         wc.cbSize = sizeof(WNDCLASSEXA);
         wc.hInstance = GetModuleHandle(nullptr);
         wc.lpszClassName = "PCFW_WindowClass";
@@ -325,15 +386,15 @@ namespace PCFW
             return;
         }
     }
-    
-    void INTERNAL_showWindow(window *window)
+
+    void INTERNAL_show_window(window *window)
     {
         if (ShowWindow(window->_handle_window, SW_SHOW))
         {
             PCLOG::warning("No window to show");
             return;
         }
-        
+
         if (!UpdateWindow(window->_handle_window))
         {
             PCLOG::error("Failed to update window");
@@ -341,7 +402,7 @@ namespace PCFW
         }
     }
 
-    void destroyWindow(window *window)
+    void destroy_window(window *window)
     {
         if (!window)
         {
@@ -364,14 +425,14 @@ namespace PCFW
         delete window;
     }
 
-    void swapBuffers(window *window)
+    void swap_buffers(window *window)
     {
         if (!window)
         {
             PCLOG::warning("No window to swap buffer");
             return;
         }
-        
+
         if (!window->_handle_device_context)
         {
             PCLOG::error("Failed to get handle device context to swap buffer");
@@ -380,7 +441,7 @@ namespace PCFW
         SwapBuffers(window->_handle_device_context);
     }
 
-    void makeContextCurrent(window *window)
+    void make_context_current(window *window)
     {
         if (!window)
         {
@@ -394,6 +455,6 @@ namespace PCFW
         }
         wglMakeCurrent(window->_handle_device_context, window->_context);
     }
-} // namespace PCFW
+} // namespace PC
 
 #endif

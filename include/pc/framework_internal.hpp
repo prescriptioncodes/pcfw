@@ -1,12 +1,12 @@
 // Author: oknauta
-// License:
+// License: MIT
 // File: pcfw_internal.hpp
 // Date: 2024-12-10
 
 #ifndef PCFW_INTERNAL_HPP
 #define PCFW_INTERNAL_HPP
 
-#include "pcfw.hpp"
+#include "framework.hpp"
 
 #ifdef __linux__
 #include <GL/glx.h>
@@ -20,19 +20,21 @@
 #include <windows.h>
 #endif
 
-namespace PCFW
+namespace PC
 {
-    PCFW_API void INTERNAL_showWindow(window *window);
-    PCFW_API void INTERNAL_setWindowTitle(window *window);
-    PCFW_API void INTERNAL_createWindow(window *window);
-    PCFW_API void INTERNAL_createContext(window *window);
-    PCFW_API void INTERNAL_setEvents(window *window);
+    PCFW_API void INTERNAL_show_window(window *window);
+    PCFW_API void INTERNAL_set_window_title(window *window);
+    PCFW_API void INTERNAL_create_window(window *window);
+    PCFW_API void INTERNAL_create_context(window *window);
+    PCFW_API void INTERNAL_set_events(window *window);
 
 #ifdef _WIN32
     struct window
     {
         int _position_x, _position_y;                         // Position
         int _width, _height;                                  // Size
+        int _minimum_width, _minimum_height;
+        int _maximum_width, _maximum_height;
         const char *_title;                                   // Title
         HWND _handle_window;                                  // Window Handle
         HDC _handle_device_context;                           // Device Context
@@ -48,6 +50,7 @@ namespace PCFW
 #ifdef __linux__
     struct window
     {
+        void (*proc)(const char *proc_name);
         int _width, _height;
         const char *_title;
         int _screen;

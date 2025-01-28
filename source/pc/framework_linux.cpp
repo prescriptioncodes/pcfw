@@ -5,17 +5,19 @@
 
 #ifdef __linux__
 
-#include "pcfw/pcfw_internal.hpp"
+#include "pc/framework.hpp"
+#include "pc/framework_internal.hpp"
 #include <GL/gl.h>
 #include <GL/glx.h>
-#include <X11/Xlib.h>
-
-#include <bitset>
+// #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 #include <pclog/pclog.hpp>
 
-namespace PCFW
+namespace PC
 {
+    // Keys
+    
     constexpr int MOUSE_LEFT_BUTTON = 1;
     constexpr int MOUSE_MIDDLE_BUTTON = 2;
     constexpr int MOUSE_RIGHT_BUTTON = 3;
@@ -83,7 +85,36 @@ namespace PCFW
     constexpr int KEY_Y = 29;
     constexpr int KEY_Z = 52;
 
-    void getCursorPosition(window *window, int *x, int *y)
+    // Functions
+    
+    void set_window_limits(window *window, int minimum_width, int minimum_height, int maximum_width, int maximum_height)
+    {
+        if (!window)
+        {
+            PCLOG::warning("No window to set window limits");
+            return;
+        }
+        
+        XSizeHints *size_hints = XAllocSizeHints();   
+        size_hints->flags = PMinSize;
+        
+        if (!size_hints)
+        {
+            PCLOG::error("Failed to allocate memory for size_hints");
+            return;
+        }
+        
+        size_hints->min_width = minimum_width;
+        size_hints->min_height = minimum_height;
+        size_hints->max_width = maximum_width;
+        size_hints->max_height = maximum_height;
+        
+        XSetNormalHints(window->_display, window->_window, size_hints);
+        
+        XFree(size_hints);
+    }
+
+    void get_cursor_position(window *window, int *x, int *y)
     {
         Window _root;
         Window _child;
@@ -95,7 +126,7 @@ namespace PCFW
         XQueryPointer(window->_display, window->_window, &_root, &_child, &_root_x, &_root_y, x, y, &_mask);
     }
 
-    int getKey(window *window, int key, int type)
+    int get_key(window *window, int key, int type)
     {
         if (type == KEY_PRESS)
         {
@@ -109,7 +140,7 @@ namespace PCFW
         return 0;
     }
 
-    void setSwapInterval(window *window, int interval)
+    void set_swap_interval(window *window, int interval)
     {
         static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = nullptr;
 
@@ -124,12 +155,12 @@ namespace PCFW
         }
     }
 
-    const char *getWindowTitle(window *window)
+    const char *get_window_title(window *window)
     {
         return window ? window->_title : nullptr;
     }
 
-    void setFramebufferSizeCallback(window *window, framebuffer_size_callback callback)
+    void set_framebuffer_size_callback(window *window, framebuffer_size_callback callback)
     {
         if (!window)
         {
@@ -139,7 +170,7 @@ namespace PCFW
         window->_framebuffer_size_callback = callback;
     }
 
-    void setMouseCallback(window *window, mouse_callback callback)
+    void set_mouse_callback(window *window, mouse_callback callback)
     {
         if (!window)
         {
@@ -150,21 +181,21 @@ namespace PCFW
         window->_mouse_callback = callback;
     }
 
-    bool windowShouldClose(window *window)
+    bool window_should_close(window *window)
     {
         return window ? window->_should_close : false;
     }
 
-    int getWindowWidth(window *window)
+    int get_window_width(window *window)
     {
         return window ? window->_width : 0;
     }
-    int getWindowHeight(window *window)
+    int get_window_height(window *window)
     {
         return window ? window->_height : 0;
     }
 
-    void pollEvents(window *window)
+    void poll_events(window *window)
     {
         if (XPending(window->_display) > 0)
         {
@@ -187,7 +218,7 @@ namespace PCFW
                 window->_height = new_height;
                 if (window->_framebuffer_size_callback)
                 {
-                    window->_framebuffer_size_callback(new_width, new_height);
+                    window->_framebuffer_size_callback(window, new_width, new_height);
                 }
                 break;
             }
@@ -217,7 +248,7 @@ namespace PCFW
         }
     }
 
-    void INTERNAL_showWindow(window *window)
+    void INTERNAL_show_window(window *window)
     {
         if (!window->_display && !window->_window)
         {
@@ -227,7 +258,7 @@ namespace PCFW
         XMapWindow(window->_display, window->_window);
     }
 
-    void INTERNAL_setWindowTitle(window *window)
+    void INTERNAL_set_window_title(window *window)
     {
         if (!window->_display && !window->_window)
         {
@@ -237,7 +268,7 @@ namespace PCFW
         XStoreName(window->_display, window->_window, window->_title);
     }
 
-    void INTERNAL_createWindow(window *window)
+    void INTERNAL_create_window(window *window)
     {
         window->_display = XOpenDisplay(nullptr);
         if (!window->_display && window)
@@ -268,7 +299,7 @@ namespace PCFW
         }
     }
 
-    void INTERNAL_createContext(window *window)
+    void INTERNAL_create_context(window *window)
     {
         if (!window)
         {
@@ -276,8 +307,25 @@ namespace PCFW
         }
         window->_context = glXCreateContext(window->_display, window->_visual_info, nullptr, GL_TRUE);
     }
+    
+    void* get_proc_address(const char *proc)
+    {
+        if (!proc)
+            return nullptr;
 
-    void destroyWindow(window *window)
+        void *_address = (void*)glXGetProcAddress((const GLubyte*)proc);
+        
+        if (!_address)
+        {
+            PCLOG::error("Failed to load proc");
+            return nullptr;
+        }
+
+        return _address;
+    }
+
+
+    void destroy_window(window *window)
     {
         if (!window)
             PCLOG::warning("No window to destroy");
@@ -307,7 +355,7 @@ namespace PCFW
         delete window;
     }
 
-    void swapBuffers(window *window)
+    void swap_buffers(window *window)
     {
         if (!window->_display && !window->_window)
         {
@@ -317,7 +365,7 @@ namespace PCFW
         glXSwapBuffers(window->_display, window->_window);
     }
 
-    void makeContextCurrent(window *window)
+    void make_context_current(window *window)
     {
         if (!glXMakeCurrent(window->_display, window->_window, window->_context))
             PCLOG::warning("No window to make context");
