@@ -17,7 +17,7 @@ int main(void)
 	
 
 	// While the window shoudn't close...
-	while (!PC::Framework::window_should_close(window))
+		while (!PC::Framework::window_should_close(window))
 	{
 		// Polls the events
 		PC::Framework::poll_events(window);

@@ -17,7 +17,7 @@ endif()
 
 if(LINUX)
 	install(TARGETS pcfw DESTINATION lib)
-	install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION /include/ FILES_MATCHING PATTERN "*.hpp")
+	install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include/ FILES_MATCHING PATTERN "*.hpp")
 
 	set(CPACK_GENERATOR "TGZ")
 	set(CPACK_PACKAGE_NAME "libpcfw")
