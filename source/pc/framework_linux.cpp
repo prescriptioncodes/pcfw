@@ -9,12 +9,13 @@
 #include "pc/framework_internal.hpp"
 #include <GL/gl.h>
 #include <GL/glx.h>
-// #include <X11/Xlib.h>
+#include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/X.h>
 
 #include <pc/log.hpp>
 
-namespace PC
+namespace PC::Framework
 {
     // Keys
     
@@ -87,14 +88,279 @@ namespace PC
 
     // Functions
     
-    void set_window_limits(window *window, int minimum_width, int minimum_height, int maximum_width, int maximum_height)
+    int INTERNAL_set_framebuffer_size_callback(window *window, framebuffer_size_callback callback)
+    {
+        window->event._framebuffer_size_callback = callback;
+
+        if (!window->event._framebuffer_size_callback)
+        {
+            PC::Log::warning("Failed to set framebuffer size callback");
+            return 1;
+        }
+
+        return 0;
+    }
+
+    int INTERNAL_set_mouse_callback(window *window, mouse_callback callback)
+    {
+        window->event._mouse_callback = callback;
+
+        if (!window->event._mouse_callback)
+        {
+            PC::Log::error("Failed to set mouse callback");
+            return 1;
+        }
+
+        return 0;
+    }
+
+    void INTERNAL_swap_buffers(window *window)
+    {
+        glXSwapBuffers(window->internal._display, window->internal._handle);
+    }
+
+    int INTERNAL_create_window(window *window)
     {
         if (!window)
         {
-            Log::warning("No window to set window limits");
-            return;
+            PC::Log::error("PCFW Internal: No window to create");
+            return 1;
+        }
+
+        window->internal._display = XOpenDisplay(nullptr);
+        if (!window->internal._display)
+        {
+            PC::Log::error("PCFW Internal: Failed to open display");
+            return 1;
+        }
+
+        window->internal._screen = DefaultScreen(window->internal._display);
+        if (window->internal._screen < 0)
+        {
+            PC::Log::error("PCFW Internal: Failed to set internal display");
+            return 1;
+        }
+
+        static int _attributes[]
+        {
+            GLX_RGBA,
+            GLX_DEPTH_SIZE,
+            24,
+            GLX_DOUBLEBUFFER,
+            None
+        };
+
+        window->internal._visual_info = glXChooseVisual(window->internal._display, window->internal._screen, _attributes);
+        if (!window->internal._visual_info)
+        {
+            PC::Log::error("PCFW Internal: Failed to set visual info");
+            return 1;
         }
         
+        Window root = RootWindow(window->internal._display, window->internal._screen);
+        window->internal._attributes.colormap = XCreateColormap(window->internal._display, root, window->internal._visual_info->visual, AllocNone);
+        if (!window->internal._attributes.colormap)
+        {
+            PC::Log::error("PCFW Internal: Failed to set colormap");
+            return 1;
+        }
+
+        window->internal._attributes.event_mask = ExposureMask | KeyPressMask | ButtonPress | StructureNotifyMask | ButtonReleaseMask | KeyReleaseMask | EnterWindowMask | LeaveWindowMask | PointerMotionMask | Button1MotionMask | VisibilityChangeMask | ColormapChangeMask;
+        
+        window->internal._gl_context = glXCreateContext(window->internal._display, window->internal._visual_info, nullptr, GL_TRUE);
+        if (!window->internal._gl_context)
+        {
+            PC::Log::error("PCFW Internal: Failed to create GLX context");
+            return 1;
+        }
+
+        window->internal._handle = XCreateWindow(window->internal._display, root, 0, 0, window->config._width, window->config._height, 0, CopyFromParent, InputOutput, window->internal._visual_info->visual, CWColormap | CWEventMask, &window->internal._attributes);
+
+        if (!window->internal._handle)
+        {
+            PC::Log::error("PCFW Internal: Failed to create window");
+            return 1;
+        }
+
+        XMapWindow(window->internal._display, window->internal._handle);
+        XFlush(window->internal._display);
+
+        return 0;
+    }
+
+    int INTERNAL_destroy_window(window *window)
+    {
+        if (window->internal._gl_context)
+        {
+            glXMakeCurrent(window->internal._display, None, nullptr);
+            glXDestroyContext(window->internal._display, window->internal._gl_context);
+        }
+
+        if (window->internal._colormap)
+        {
+            XFreeColormap(window->internal._display, window->internal._colormap);
+        }
+
+        if (window->internal._handle)
+        {
+            XDestroyWindow(window->internal._display, window->internal._handle);
+        }
+
+        if (window->internal._display)
+        {
+            XCloseDisplay(window->internal._display);
+        }
+
+        return 0;
+    }
+
+    bool INTERNAL_window_should_close(window *window)
+    {
+        return window ? window->config._should_close : false;
+    }
+
+    static void handle_client_message(window *window, XEvent *event)
+    {
+        if (event->xclient.data.l[0] == window->internal._wm_delete_window)
+        {
+            window->config._should_close = true;
+        }
+    }
+
+    static void handle_configure_notify(window *window, XConfigureEvent *configure_event)
+    {
+        window->config._width = configure_event->width;
+        window->config._height = configure_event->height;
+        if (window->event._framebuffer_size_callback)
+        {
+            window->event._framebuffer_size_callback(window, configure_event->width, configure_event->height);
+        }
+    }
+
+    static void handle_mouse_event(window *window, XButtonEvent *button_event)
+    {
+        if (window->event._mouse_callback)
+        {
+            window->event._mouse_callback(button_event->button, button_event->type, button_event->state);
+        }
+    }
+
+    static void handle_key_event(window *window, XKeyEvent *key_event)
+    {
+        if (key_event->keycode < 256) {
+            window->config._key_state[key_event->keycode] = key_event->type == KeyPress;
+        }
+    }
+
+    void INTERNAL_poll_events(window *window)
+    {
+        Display *display = window->internal._display;
+        XEvent event = window->internal._event;
+
+        while (XPending(display) > 0) {
+            XNextEvent(display, &event);
+
+            switch (event.type)
+            {
+                case ClientMessage:
+                    handle_client_message(window, &event);
+                    break;
+                case ConfigureNotify:
+                    handle_configure_notify(window, &event.xconfigure);
+                    break;
+                case ButtonPress:
+                case ButtonRelease:
+                    handle_mouse_event(window, &event.xbutton);
+                    break;
+                case KeyPress:
+                case KeyRelease:
+                    handle_key_event(window, &event.xkey);
+                    break;
+            }
+        }
+    }
+
+    int INTERNAL_make_context_current(window *window)
+    {
+        if (!glXMakeCurrent(window->internal._display, window->internal._handle, window->internal._gl_context))
+        {
+            Log::error("PCFW Internal: Failed to make context current");
+            return 1;
+        }
+
+        return 0;
+    }
+    
+    void INTERNAL_set_swap_interval(window *window, int interval)
+    {
+        static PFNGLXSWAPINTERVALEXTPROC _swap_interval = nullptr;
+
+        if (!_swap_interval)
+        {
+            _swap_interval = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+        }
+        else
+        {
+            _swap_interval(window->internal._display, window->internal._handle, interval);
+        }
+    }
+
+
+    // void get_cursor_position(window *window, int *x, int *y)
+    // {
+    //     Window _root;
+    //     Window _child;
+
+    //     int _root_x, _root_y;
+
+    //     unsigned int _mask;
+
+    //     XQueryPointer(window->_display, window->_window, &_root, &_child, &_root_x, &_root_y, x, y, &_mask);
+    // }
+
+    // int get_key(window *window, int key, int type)
+    // {
+    //     if (type == KEY_PRESS)
+    //     {
+    //         return window->key_state[key];
+    //     }
+    //     else if (type == KEY_RELEASE)
+    //     {
+    //         return !window->key_state[key];
+    //     }
+
+    //     return 0;
+    // }
+
+    
+    // const char *get_window_title(window *window)
+    // {
+    //     return window ? window->_title : nullptr;
+    // }
+
+    // void set_framebuffer_size_callback(window *window, framebuffer_size_callback callback)
+    // {
+    //     if (!window)
+    //     {
+    //         Log::error("Failed to set framebuffer size callback");
+    //         return;
+    //     }
+    //     window->_framebuffer_size_callback = callback;
+    // }
+
+    
+
+    int INTERNAL_get_window_width(window *window)
+    {
+        return window ? window->config._width : 0;
+    }
+    int INTERNAL_get_window_height(window *window)
+    {
+        return window ? window->config._height : 0;
+    }
+    
+    void INTERNAL_set_window_limits(window *window, int minimum_width, int minimum_height, int maximum_width, int maximum_height)
+    {
         XSizeHints *size_hints = XAllocSizeHints();   
         size_hints->flags = PMinSize;
         
@@ -109,206 +375,12 @@ namespace PC
         size_hints->max_width = maximum_width;
         size_hints->max_height = maximum_height;
         
-        XSetNormalHints(window->_display, window->_window, size_hints);
+        XSetNormalHints(window->internal._display, window->internal._handle, size_hints);
         
         XFree(size_hints);
     }
 
-    void get_cursor_position(window *window, int *x, int *y)
-    {
-        Window _root;
-        Window _child;
-
-        int _root_x, _root_y;
-
-        unsigned int _mask;
-
-        XQueryPointer(window->_display, window->_window, &_root, &_child, &_root_x, &_root_y, x, y, &_mask);
-    }
-
-    int get_key(window *window, int key, int type)
-    {
-        if (type == KEY_PRESS)
-        {
-            return window->key_state[key];
-        }
-        else if (type == KEY_RELEASE)
-        {
-            return !window->key_state[key];
-        }
-
-        return 0;
-    }
-
-    void set_swap_interval(window *window, int interval)
-    {
-        static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = nullptr;
-
-        if (!glXSwapIntervalEXT)
-        {
-            glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
-        }
-
-        if (glXSwapIntervalEXT)
-        {
-            glXSwapIntervalEXT(window->_display, window->_window, interval);
-        }
-    }
-
-    const char *get_window_title(window *window)
-    {
-        return window ? window->_title : nullptr;
-    }
-
-    void set_framebuffer_size_callback(window *window, framebuffer_size_callback callback)
-    {
-        if (!window)
-        {
-            Log::error("Failed to set framebuffer size callback");
-            return;
-        }
-        window->_framebuffer_size_callback = callback;
-    }
-
-    void set_mouse_callback(window *window, mouse_callback callback)
-    {
-        if (!window)
-        {
-            Log::warning("No window to set mouse callback");
-            return;
-        }
-
-        window->_mouse_callback = callback;
-    }
-
-    bool window_should_close(window *window)
-    {
-        return window ? window->_should_close : false;
-    }
-
-    int get_window_width(window *window)
-    {
-        return window ? window->_width : 0;
-    }
-    int get_window_height(window *window)
-    {
-        return window ? window->_height : 0;
-    }
-
-    void poll_events(window *window)
-    {
-        if (XPending(window->_display) > 0)
-        {
-            XNextEvent(window->_display, &window->_event);
-
-            switch (window->_event.type)
-            {
-            case ClientMessage:
-                if (window->_event.xclient.data.l[0] == window->_wm_delete_window)
-                {
-                    window->_should_close = true;
-                }
-                break;
-
-            case ConfigureNotify:
-            {
-                int new_width = window->_event.xconfigure.width;
-                int new_height = window->_event.xconfigure.height;
-                window->_width = new_width;
-                window->_height = new_height;
-                if (window->_framebuffer_size_callback)
-                {
-                    window->_framebuffer_size_callback(window, new_width, new_height);
-                }
-                break;
-            }
-            case ButtonPress:
-            {
-                if (window->_mouse_callback)
-                {
-                    window->_mouse_callback(window->_event.xbutton.button, window->_event.xbutton.type, window->_event.xbutton.state);
-                }
-                break;
-            }
-            case ButtonRelease:
-                if (window->_mouse_callback)
-                {
-                    window->_mouse_callback(window->_event.xbutton.button, window->_event.xbutton.type, window->_event.xbutton.state);
-                }
-                break;
-            case KeyPress:
-            {
-                window->key_state[window->_event.xkey.keycode] = true;
-                break;
-            }
-            case KeyRelease:
-                window->key_state[window->_event.xkey.keycode] = false;
-                break;
-            }
-        }
-    }
-
-    void INTERNAL_show_window(window *window)
-    {
-        if (!window->_display && !window->_window)
-        {
-            Log::error("Failed to show window");
-            return;
-        }
-        XMapWindow(window->_display, window->_window);
-    }
-
-    void INTERNAL_set_window_title(window *window)
-    {
-        if (!window->_display && !window->_window)
-        {
-            Log::error("Failed to set internal window title");
-            return;
-        }
-        XStoreName(window->_display, window->_window, window->_title);
-    }
-
-    void INTERNAL_create_window(window *window)
-    {
-        window->_display = XOpenDisplay(nullptr);
-        if (!window->_display && window)
-        {
-            Log::error("Failed to open X display");
-            delete window;
-            return;
-        }
-        window->_screen = DefaultScreen(window->_display);
-        window->_window = XCreateWindow(window->_display, RootWindow(window->_display, window->_screen), 0, 0, window->_width, window->_height, 0, CopyFromParent, InputOutput, window->_visual, CWColormap | CWEventMask, &window->_attributes);
-
-        static int _attributes[]{GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
-
-        window->_visual_info = glXChooseVisual(window->_display, window->_screen, _attributes);
-
-        window->_visual = window->_visual_info->visual;
-        window->_attributes.colormap = XCreateColormap(window->_display, RootWindow(window->_display, window->_screen), window->_visual, AllocNone);
-        window->_attributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask;
-
-        window->_wm_delete_window = XInternAtom(window->_display, "WM_DELETE_WINDOW", False);
-        XSetWMProtocols(window->_display, window->_window, &window->_wm_delete_window, 1);
-        XSelectInput(window->_display, window->_window, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask);
-
-        if (!window)
-        {
-            Log::error("Failed to create window");
-            delete window;
-        }
-    }
-
-    void INTERNAL_create_context(window *window)
-    {
-        if (!window)
-        {
-            Log::warning("No window to create context");
-        }
-        window->_context = glXCreateContext(window->_display, window->_visual_info, nullptr, GL_TRUE);
-    }
-    
-    void* get_proc_address(const char *proc)
+    void *INTERNAL_get_proc_address(const char *proc)
     {
         if (!proc)
             return nullptr;
@@ -322,53 +394,6 @@ namespace PC
         }
 
         return _address;
-    }
-
-
-    void destroy_window(window *window)
-    {
-        if (!window)
-            Log::warning("No window to destroy");
-        return;
-
-        if (window->_context)
-        {
-            glXMakeCurrent(window->_display, None, nullptr);
-            glXDestroyContext(window->_display, window->_context);
-        }
-
-        if (window->_colormap)
-        {
-            XFreeColormap(window->_display, window->_colormap);
-        }
-
-        if (window->_window)
-        {
-            XDestroyWindow(window->_display, window->_window);
-        }
-
-        if (window->_display)
-        {
-            XCloseDisplay(window->_display);
-        }
-
-        delete window;
-    }
-
-    void swap_buffers(window *window)
-    {
-        if (!window->_display && !window->_window)
-        {
-            Log::warning("No window to swap buffers");
-            return;
-        }
-        glXSwapBuffers(window->_display, window->_window);
-    }
-
-    void make_context_current(window *window)
-    {
-        if (!glXMakeCurrent(window->_display, window->_window, window->_context))
-            Log::warning("No window to make context");
     }
 } // namespace PCFW
 

@@ -12,7 +12,7 @@
 #include "pc/framework.hpp"
 #include <pc/log.hpp>
 
-namespace PC
+namespace PC::Framework
 {
     // Keys
 

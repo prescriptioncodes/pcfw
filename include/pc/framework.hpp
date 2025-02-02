@@ -16,19 +16,18 @@
 #define PCFW_API
 #endif
 
-namespace PC
+namespace PC::Framework
 {
-    constexpr int DONT_CARE = -1;
+	typedef struct window window;
+	typedef void (*framebuffer_size_callback)(window *window, int width, int height);
+	typedef void (*mouse_callback)(int mouse_button, int status, int mods);
+	typedef void *(*proc)(const char *name);
+	
+	// Gets the OpenGL proc address
+	PCFW_API void *get_proc_address(const char *proc);
 
-    typedef struct window window;
-    typedef void (*framebuffer_size_callback)(PC::window *window, int width, int height);
-    typedef void (*mouse_callback)(int mouse_button, int status, int mods);
-
-    typedef void *(*load_proc)(const char *name);
-
-    PCFW_API void *get_proc_address(const char *proc);
-
-    PCFW_API void set_window_limits(window *window, int minimum_width, int minimum_height, int maximum_width, int maximum_height);
+    // Sets the window limits. e.g., the minimum resolution
+    PCFW_API int set_window_limits(window *window, int minimum_width, int minimum_height, int maximum_width, int maximum_height);
 
     /**
      * @brief Gets a key from keyboard or mouse
@@ -67,7 +66,7 @@ namespace PC
      * @param window What that will destroyed
      * @return A destroyed window
      */
-    PCFW_API void destroy_window(window *window);
+    PCFW_API int destroy_window(window *window);
 
     /**
      * @brief Swap frame on screen
@@ -81,7 +80,7 @@ namespace PC
      * @param window What that will make the context
      * @return A made context
      */
-    PCFW_API void make_context_current(window *window);
+    PCFW_API int make_context_current(window *window);
 
     /**
      * @brief Poll the events
@@ -96,14 +95,14 @@ namespace PC
      * @param callback The callback
      * @return A callbacked window
      */
-    PCFW_API void set_framebuffer_size_callback(window *window, framebuffer_size_callback callback);
+    PCFW_API int set_framebuffer_size_callback(window *window, framebuffer_size_callback callback);
 
     /**
      * @brief Sets the mouse callback
      * @param window What will receive the callback
      * @param callback The callback
      */
-    PCFW_API void set_mouse_callback(window *window, mouse_callback callback);
+    PCFW_API int set_mouse_callback(window *window, mouse_callback callback);
 
     /**
      * @brief Sets the swap interval of a window
@@ -118,7 +117,7 @@ namespace PC
      * @param window What will be detected
      * @return If a window should should close
      */
-    PCFW_API bool window_should_close(window *window);
+    PCFW_API int window_should_close(window *window);
 
     /**
      * @brief Gets the title of a window
@@ -132,7 +131,11 @@ namespace PC
      * @param x The variable that the value will be storaged the horizontal position
      * @param y The variable that the value will be storaged the vertical position
      */
-    PCFW_API void get_cursor_position(window *window, int *x, int *y);
+    PCFW_API int get_cursor_position(window *window, int *x, int *y);
+
+    // Constants
+    
+    constexpr int DONT_CARE = -1;
 
     // Keys
 
