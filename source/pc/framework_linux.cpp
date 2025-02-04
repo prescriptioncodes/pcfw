@@ -126,21 +126,25 @@ namespace PC::Framework
             PC::Log::error("PCFW Internal: No window to create");
             return 1;
         }
-
+	
+	// Setting the display
         window->internal._display = XOpenDisplay(nullptr);
         if (!window->internal._display)
         {
             PC::Log::error("PCFW Internal: Failed to open display");
             return 1;
         }
-
+	
+	// Setting the default screen
         window->internal._screen = DefaultScreen(window->internal._display);
         if (window->internal._screen < 0)
         {
             PC::Log::error("PCFW Internal: Failed to set internal display");
             return 1;
         }
+	
 
+	// The visual attributes. Such as if it will has double buffer, etc
         static int _attributes[]
         {
             GLX_RGBA,
@@ -149,7 +153,8 @@ namespace PC::Framework
             GLX_DOUBLEBUFFER,
             None
         };
-
+	
+	// Giving the visual information
         window->internal._visual_info = glXChooseVisual(window->internal._display, window->internal._screen, _attributes);
         if (!window->internal._visual_info)
         {
@@ -157,16 +162,25 @@ namespace PC::Framework
             return 1;
         }
         
+	// Creating a root window to use later in "XCreateWindow"
         Window root = RootWindow(window->internal._display, window->internal._screen);
-        window->internal._attributes.colormap = XCreateColormap(window->internal._display, root, window->internal._visual_info->visual, AllocNone);
+	if (!root)
+	{
+		PC::Log::error("Failed to create root window");
+		return 1;
+	}
+
+	window->internal._attributes.colormap = XCreateColormap(window->internal._display, root, window->internal._visual_info->visual, AllocNone);
         if (!window->internal._attributes.colormap)
         {
             PC::Log::error("PCFW Internal: Failed to set colormap");
             return 1;
         }
 
+	// Setting the event mask
         window->internal._attributes.event_mask = ExposureMask | KeyPressMask | ButtonPress | StructureNotifyMask | ButtonReleaseMask | KeyReleaseMask | EnterWindowMask | LeaveWindowMask | PointerMotionMask | Button1MotionMask | VisibilityChangeMask | ColormapChangeMask;
-        
+
+        // Creating the context of the window. It's not like "make" the context
         window->internal._gl_context = glXCreateContext(window->internal._display, window->internal._visual_info, nullptr, GL_TRUE);
         if (!window->internal._gl_context)
         {
@@ -174,17 +188,26 @@ namespace PC::Framework
             return 1;
         }
 
+	// Creating the window with the parameters above 
         window->internal._handle = XCreateWindow(window->internal._display, root, 0, 0, window->config._width, window->config._height, 0, CopyFromParent, InputOutput, window->internal._visual_info->visual, CWColormap | CWEventMask, &window->internal._attributes);
+
+	// Setting the parameter "WM_DELETE_WINDOW" to the window
+	window->internal._wm_delete_window = XInternAtom(window->internal._display, "WM_DELETE_WINDOW", 1);
+	XSetWMProtocols(window->internal._display, window->internal._handle, &window->internal._wm_delete_window, 1);
 
         if (!window->internal._handle)
         {
             PC::Log::error("PCFW Internal: Failed to create window");
             return 1;
         }
-
+	
+	// Showing the window
         XMapWindow(window->internal._display, window->internal._handle);
-        XFlush(window->internal._display);
+        
+	// Updating the window
+	XFlush(window->internal._display);
 
+	// Returning success
         return 0;
     }
 
@@ -257,7 +280,8 @@ namespace PC::Framework
         Display *display = window->internal._display;
         XEvent event = window->internal._event;
 
-        while (XPending(display) > 0) {
+        while (XPending(display) > 0)
+	{
             XNextEvent(display, &event);
 
             switch (event.type)
