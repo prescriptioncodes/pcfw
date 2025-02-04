@@ -5,3 +5,4 @@ build
 .cache
 out
 cmake-build-Release
+compile_commands.json

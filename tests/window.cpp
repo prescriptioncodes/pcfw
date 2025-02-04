@@ -50,6 +50,14 @@ void mouse_callback(int mouse_button, int status, int mods)
 	}
 }
 
+void key_callback(int key, int status, int action, int mods)
+{
+	if (action == PC::Framework::KEY_PRESS && key == PC::Framework::KEY_J)
+	{
+		PC::Log::info("J pressed");
+	}
+}
+
 int main()
 {
     PC::Log::info("Hello, world!");
@@ -67,7 +75,7 @@ int main()
     PC::Framework::set_mouse_callback(window, mouse_callback);
     PC::Framework::set_swap_interval(window, 1);
     PC::Framework::set_window_limits(window, 300, 300, PC::Framework::DONT_CARE, PC::Framework::DONT_CARE);
-
+    PC::Framework::set_key_callback(window, key_callback);
     if (!gladLoadGLLoader(PC::Framework::get_proc_address))
     {
         PC::Log::error("Failed to load glad");

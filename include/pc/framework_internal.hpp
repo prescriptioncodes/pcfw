@@ -28,6 +28,7 @@ namespace PC::Framework
 	PCFW_API int INTERNAL_destroy_window(window *window);
 	PCFW_API int INTERNAL_make_context_current(window *window);
 	PCFW_API int INTERNAL_set_mouse_callback(window *window, mouse_callback callback);
+	PCFW_API int INTERNAL_set_key_callback(window *window, key_callback callback);
 	PCFW_API int INTERNAL_set_framebuffer_size_callback(window *window, framebuffer_size_callback callback);
 	PCFW_API bool INTERNAL_window_should_close(window *window);
 	PCFW_API void INTERNAL_poll_events(window *window);
@@ -35,7 +36,8 @@ namespace PC::Framework
 	PCFW_API void INTERNAL_set_swap_interval(window *window, int interval);
 	PCFW_API void INTERNAL_set_window_limits(window *window, int minimum_width, int minimum_height, int maximum_width, int maximum_height);
 	PCFW_API void *INTERNAL_get_proc_address(const char *proc);
-	
+
+
 	// Implementation of the opaque struct "window"
     struct window
     {
@@ -53,6 +55,7 @@ namespace PC::Framework
         {
             framebuffer_size_callback _framebuffer_size_callback;
             mouse_callback _mouse_callback;
+	    key_callback _key_callback;
         } event;
         
         struct internal

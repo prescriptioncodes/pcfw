@@ -9,6 +9,28 @@
 
 namespace PC::Framework
 {
+	int set_key_callback(window *window, key_callback callback)
+	{
+		if (!window)
+		{
+			Log::warning("No window to set key callback");
+			return 1;
+		}
+
+		if (!callback)
+		{
+			Log::warning("No key callback to set into the window");
+			return 1;
+		}
+
+		if (INTERNAL_set_key_callback(window, callback) != 0)
+		{
+			return 1;
+		}
+
+		return 0;
+	}
+
 	int set_framebuffer_size_callback(window *window, framebuffer_size_callback callback)
 	{
 		if (!window)
@@ -16,11 +38,12 @@ namespace PC::Framework
 			PC::Log::warning("No window to set framebuffer size callback");
 			return 1;
 		}
-
-	if (!callback)
-	{
-		PC::Log::warning("No framebuffer size callback to set into the window");
-	}
+		
+		if (!callback)
+		{
+			PC::Log::warning("No framebuffer size callback to set into the window");
+			return 1;
+		}
 
 		if (INTERNAL_set_framebuffer_size_callback(window, callback) != 0)
 		{
@@ -32,22 +55,22 @@ namespace PC::Framework
 
 	int set_mouse_callback(window *window, mouse_callback callback)
 	{
-	if (!window)
-	{
-	    PC::Log::warning("No window to set mouse callback");
-	    return 1;
-	}
+		if (!window)
+		{
+	    		PC::Log::warning("No window to set mouse callback");
+	    		return 1;
+		}
 
-	if (!callback)
-	{
-	    PC::Log::warning("No mouse callback setted");
-	    return 1;
-	}
+		if (!callback)
+		{
+			PC::Log::warning("No mouse callback setted");
+	    		return 1;
+		}
 
-	if (INTERNAL_set_mouse_callback(window, callback) != 0)
-	{
-	    return 1;
-	}
+		if (INTERNAL_set_mouse_callback(window, callback) != 0)
+		{
+	    		return 1;
+		}
 
 		return 0;
 	};

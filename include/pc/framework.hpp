@@ -22,7 +22,9 @@ namespace PC::Framework
 	typedef void (*framebuffer_size_callback)(window *window, int width, int height);
 	typedef void (*mouse_callback)(int mouse_button, int status, int mods);
 	typedef void *(*proc)(const char *name);
-	
+	typedef void (*key_callback)(int key, int scancode, int action, int mods);
+	int set_key_callback(window* window, key_callback callback);
+
 	// Gets the OpenGL proc address
 	PCFW_API void *get_proc_address(const char *proc);
 

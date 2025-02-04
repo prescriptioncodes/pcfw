@@ -86,20 +86,33 @@ namespace PC::Framework
     constexpr int KEY_Y = 29;
     constexpr int KEY_Z = 52;
 
-    // Functions
-    
-    int INTERNAL_set_framebuffer_size_callback(window *window, framebuffer_size_callback callback)
-    {
-        window->event._framebuffer_size_callback = callback;
+	// Functions
+	
+    	int INTERNAL_set_key_callback(window *window, key_callback callback)
+	{
+		window->event._key_callback = callback;
 
-        if (!window->event._framebuffer_size_callback)
-        {
-            PC::Log::warning("Failed to set framebuffer size callback");
-            return 1;
-        }
+		if (!window->event._key_callback)
+		{
+			Log::error("PCFW Internal: Failed to assign key callback");
+			return 1;
+		}
 
-        return 0;
-    }
+		return 0;
+	}
+
+	int INTERNAL_set_framebuffer_size_callback(window *window, framebuffer_size_callback callback)
+	{
+		window->event._framebuffer_size_callback = callback;
+
+        	if (!window->event._framebuffer_size_callback)
+        	{
+            		PC::Log::warning("Failed to assign framebuffer size callback");
+            		return 1;
+        	}
+
+       		return 0;
+    	}
 
     int INTERNAL_set_mouse_callback(window *window, mouse_callback callback)
     {
@@ -242,67 +255,95 @@ namespace PC::Framework
         return window ? window->config._should_close : false;
     }
 
-    static void handle_client_message(window *window, XEvent *event)
+    static void handle_client_message(window *window)
     {
-        if (event->xclient.data.l[0] == window->internal._wm_delete_window)
+        if (window->internal._event.xclient.data.l[0] == window->internal._wm_delete_window)
         {
             window->config._should_close = true;
         }
     }
 
-    static void handle_configure_notify(window *window, XConfigureEvent *configure_event)
+    static void handle_configure_notify(window *window)
     {
-        window->config._width = configure_event->width;
-        window->config._height = configure_event->height;
+        window->config._width = window->internal._event.xconfigure.width;
+        window->config._height = window->internal._event.xconfigure.height;
         if (window->event._framebuffer_size_callback)
         {
-            window->event._framebuffer_size_callback(window, configure_event->width, configure_event->height);
+            window->event._framebuffer_size_callback(window, window->internal._event.xconfigure.width, window->internal._event.xconfigure.height);
         }
     }
 
-    static void handle_mouse_event(window *window, XButtonEvent *button_event)
+    static void handle_mouse_event(window *window)
     {
         if (window->event._mouse_callback)
         {
-            window->event._mouse_callback(button_event->button, button_event->type, button_event->state);
+            window->event._mouse_callback(window->internal._event.xbutton.button, window->internal._event.xbutton.type, window->internal._event.xbutton.state);
         }
     }
 
-    static void handle_key_event(window *window, XKeyEvent *key_event)
-    {
-        if (key_event->keycode < 256) {
-            window->config._key_state[key_event->keycode] = key_event->type == KeyPress;
-        }
-    }
-
-    void INTERNAL_poll_events(window *window)
-    {
-        Display *display = window->internal._display;
-        XEvent event = window->internal._event;
-
-        while (XPending(display) > 0)
+	static void handle_key_event(window *window)
 	{
-            XNextEvent(display, &event);
+		if (window->internal._event.xkey.keycode < 256)
+		{
+            		window->config._key_state[window->internal._event.xkey.keycode] = window->internal._event.xkey.type == KeyPress;
+        	}
 
-            switch (event.type)
-            {
-                case ClientMessage:
-                    handle_client_message(window, &event);
-                    break;
-                case ConfigureNotify:
-                    handle_configure_notify(window, &event.xconfigure);
-                    break;
-                case ButtonPress:
-                case ButtonRelease:
-                    handle_mouse_event(window, &event.xbutton);
-                    break;
-                case KeyPress:
-                case KeyRelease:
-                    handle_key_event(window, &event.xkey);
-                    break;
-            }
-        }
-    }
+		if (window->event._key_callback)
+		{
+			window->event._key_callback(window->internal._event.xkey.keycode, window->internal._event.xkey.keycode, (window->internal._event.xkey.type) ? KEY_PRESS : KEY_RELEASE, window->internal._event.xkey.state);
+		}
+    	}
+
+	void INTERNAL_poll_events(window *window)
+	{
+		XNextEvent(window->internal._display, &window->internal._event);
+
+		switch (window->internal._event.type)
+		{
+		case ClientMessage:
+			handle_client_message(window);
+			break;
+		case ConfigureNotify:
+			handle_configure_notify(window);
+			break;
+		case ButtonPress:
+		case ButtonRelease:
+			handle_mouse_event(window);
+			break;
+		case KeyPress:
+		case KeyRelease:
+			handle_key_event(window);
+			break;
+		}
+
+	    	/*
+		Display *display = window->internal._display;
+		XEvent event = window->internal._event;
+
+		while (XPending(display) > 0)
+		{
+			XNextEvent(display, &event);
+
+			switch (event.type)
+			{
+			case ClientMessage:
+				handle_client_message(window, &event);
+				break;
+                	case ConfigureNotify:
+                    		handle_configure_notify(window, &event.xconfigure);
+                    		break;
+                	case ButtonPress:
+                	case ButtonRelease:
+                    		handle_mouse_event(window, &event.xbutton);
+                    		break;
+                	case KeyPress:
+                	case KeyRelease:
+                    		handle_key_event(window, &event.xkey);
+                    		break;
+            		}
+		}
+		*/
+    	}
 
     int INTERNAL_make_context_current(window *window)
     {
@@ -317,11 +358,12 @@ namespace PC::Framework
     
     void INTERNAL_set_swap_interval(window *window, int interval)
     {
+
         static PFNGLXSWAPINTERVALEXTPROC _swap_interval = nullptr;
 
         if (!_swap_interval)
         {
-            _swap_interval = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+            _swap_interval = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress((const GLubyte *)"glXSwapIntervalEXT");
         }
         else
         {
